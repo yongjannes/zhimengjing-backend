@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: 织梦境
+  profiles:
+    active: dev
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    # 打印sql日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # id自增类型配置
+      id-type: ASSIGN_ID
+      # 逻辑删除字段配置
+      logic-delete-field: deleted
+      logic-not-delete-value: 0
+      logic-delete-value: 1
+    # 控制台mybatis-plus标记
+    banner: false
+
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+knife4j:
+  # 是否启用增强设置
+  enable: true
+  # 开启生产环境屏蔽
+  production: false
+  setting:
+    language: zh_cn
+    enable-version: true
+    enable-swagger-models: false
+    footer-custom-content: "Apache License 2.0 | Copyright © 2025 [织梦境](https://github.com/yongjannes) by [殇枫](https://github.com/yongjannes) [语雀知识库](https://yuque.com/yongjannes)"
+    enable-footer-custom: true
+
+jwt:
+  secret: yongjannes # 密钥
+  expiration: 43200000 # 过期时间 12h
+  refresh-threshold: 1800000 # 30分钟

@@ -1,0 +1,7 @@
+${AnsiColor.RED}                                 __
+${AnsiColor.RED} ___.__. ____   ____    ____    ${AnsiColor.YELLOW}|__|____    ____   ____   ____   ______
+${AnsiColor.YELLOW}<   |  |/  _ \ /    \  / ___\   ${AnsiColor.GREEN}|  \__  \  /    \ /    \_/ __ \ /  ___/
+${AnsiColor.GREEN} \___  (  <_> )   |  \/ /_/  >  ${AnsiColor.CYAN}|  |/ __ \|   |  \   |  \  ___/ \___ \
+${AnsiColor.CYAN} / ____|\____/|___|  /\___  /\__${AnsiColor.BLUE}|  (____  /___|  /___|  /\___  >____  >
+${AnsiColor.BLUE} \/                \//_____/\______|    \/     \/     \/     \/     \/
+${AnsiColor.DEFAULT}
