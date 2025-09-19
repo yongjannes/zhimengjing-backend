@@ -41,13 +41,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PasswordErrorException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<String> handlePasswordErrorException(PasswordErrorException ex) {
-        return Result.error(ex.getResultEnum());
+        log.warn("捕获到密码错误或账户锁定异常: {}", ex.getMessage());
+        // 1. 先用枚举创建Result，确保 code 是正确的
+        Result<String> result = Result.error(ex.getResultEnum());
+        // 2. 用异常中携带的动态消息，覆盖掉默认消息
+        result.setMessage(ex.getMessage());
+        return result;
     }
 
     // 账号封禁异常
     @ExceptionHandler(AccountForbiddenException.class)
     public Result<String> handleAccountForbiddenException(AccountForbiddenException ex) {
-        return Result.error(ex.getResultEnum());
+        log.warn("捕获到账户禁用或锁定异常: {}", ex.getMessage());
+        // 同样，先保证 code 正确，再覆盖 message
+        Result<String> result = Result.error(ex.getResultEnum());
+        result.setMessage(ex.getMessage());
+        return result;
     }
 
     // 登录状态过期异常

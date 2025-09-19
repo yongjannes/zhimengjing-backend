@@ -14,6 +14,11 @@ public class AccountForbiddenException extends RuntimeException {
     private final ResultEnum resultEnum;
 
     public AccountForbiddenException(ResultEnum resultEnum) {
+        super(resultEnum.getMessage());
         this.resultEnum = resultEnum;
+    }
+    public AccountForbiddenException(String dynamicMessage) {
+        super(dynamicMessage);
+        this.resultEnum = ResultEnum.USER_DISABLED;
     }
 }

@@ -11,7 +11,7 @@ import lombok.Data;
  * @description: 统一格式封装
  */
 @Data
-public class Result<T>{
+public class Result<T> {
     // 操作代码
     Integer code;
 

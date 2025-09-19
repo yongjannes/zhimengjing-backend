@@ -57,6 +57,8 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     private final ObjectMapper objectMapper;
     private final JwtUtils jwtUtils;
     private final CaptchaService captchaService;
+    // 账户锁定时间（分钟）
+    private static final long LOCK_TIME_MINUTES = 5;
 
     /**
      * 管理员登录
@@ -70,8 +72,10 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         AdminUser adminUser = null;
         String ip = IpUtils.getIpAddr(request);
         String userAgent = request.getHeader("User-Agent");
+        String lockKey = "";
+
         try {
-            // 验证码校验
+            // 1. 验证码校验
             String captchaId = loginDTO.getCaptchaKey();
             String userCaptcha = loginDTO.getCaptcha();
             String redisKey = "login:captcha:" + captchaId;
@@ -82,42 +86,96 @@ public class AdminAuthServiceImpl implements AdminAuthService {
             }
             stringRedisTemplate.delete(redisKey);
 
-            // 用户信息校验
+            // 2. 用户信息校验
             adminUser = adminUserMapper.selectOne(new LambdaQueryWrapper<AdminUser>()
                     .eq(AdminUser::getUsername, loginDTO.getUsername()));
-            if (Objects.isNull(adminUser)) throw new AccountNotFoundException(ResultEnum.USER_NOT_FOUND);
-            if (!passwordEncoder.matches(loginDTO.getPassword(), adminUser.getPassword())) {
-                throw new PasswordErrorException(ResultEnum.PASSWORD_ERROR);
+            if (Objects.isNull(adminUser)) {
+                throw new AccountNotFoundException(ResultEnum.USER_NOT_FOUND);
             }
-            if (adminUser.getStatus() != 1) throw new AccountForbiddenException(ResultEnum.USER_DISABLED);
 
-            // 生成JWT并缓存用户信息
+            // 定义 Redis 锁定键
+            lockKey = "admin:lock:" + adminUser.getId();
+
+            // 检查账户是否被锁定
+            if (adminUser.getStatus() == 2) {
+                if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(lockKey))) {
+                    throw new AccountForbiddenException(ResultEnum.USER_DISABLED);
+                } else {
+                    // 自动解锁
+                    adminUser.setStatus(1);
+                    adminUser.setLoginFailCount(0);
+                    adminUserMapper.updateById(adminUser);
+                }
+            }
+
+            // 3. 密码校验
+            if (!passwordEncoder.matches(loginDTO.getPassword(), adminUser.getPassword())) {
+                if (adminUser.getRoleId() != 1L) { // 排除超级管理员
+                    Integer failCount = Optional.ofNullable(adminUser.getLoginFailCount()).orElse(0) + 1;
+                    adminUser.setLoginFailCount(failCount);
+
+                    if (failCount >= 3) {
+                        adminUser.setStatus(2); // 锁定
+                        stringRedisTemplate.opsForValue().set(lockKey, "locked", LOCK_TIME_MINUTES, TimeUnit.MINUTES);
+                    }
+                    adminUserMapper.updateById(adminUser);
+                }
+                    throw new PasswordErrorException(ResultEnum.PASSWORD_ERROR);
+            }
+
+            // 4. 用户状态校验
+            if (adminUser.getStatus() == 0) {
+                throw new AccountForbiddenException(ResultEnum.USER_DISABLED);
+            }
+
+            // 5. 生成 JWT 并缓存用户信息
             String token = jwtUtils.generateToken(Map.of("adminId", adminUser.getId()), "admin");
             redisTemplate.opsForValue().set(SystemConstants.REDIS_ADMIN_USER_KEY + adminUser.getId(),
                     adminUser, jwtUtils.getExpiration(), TimeUnit.MILLISECONDS);
 
-            // 更新最后登录信息
+            // 6. 登录成功后重置失败次数，并更新登录信息
+            adminUser.setLoginFailCount(0);
             adminUser.setLastLoginTime(LocalDateTime.now());
             adminUser.setLastLoginIp(ip);
             adminUserMapper.updateById(adminUser);
 
-            // 记录登录成功日志
+            // 7. 记录登录成功日志
             recordLoginLog(adminUser.getId(), loginDTO.getUsername(), ip, userAgent, 1, "登录成功");
 
             return AdminLoginVO.builder().token(token).build();
-        } catch (Exception e) {
-            // 记录登录失败日志
-            String errorMessage = e.getMessage();
-            if (e instanceof CaptchaErrorException) errorMessage = ((CaptchaErrorException) e).getResultEnum().getMessage();
-            else if (e instanceof AccountNotFoundException) errorMessage = ((AccountNotFoundException) e).getResultEnum().getMessage();
-            else if (e instanceof PasswordErrorException) errorMessage = ((PasswordErrorException) e).getResultEnum().getMessage();
-            else if (e instanceof AccountForbiddenException) errorMessage = ((AccountForbiddenException) e).getResultEnum().getMessage();
-
+        }  catch (Exception e) {
+            String errorMessage = e.getMessage(); // 获取默认的异常消息
             Long adminId = (adminUser != null) ? adminUser.getId() : null;
-            recordLoginLog(adminId, loginDTO.getUsername(), ip, userAgent, 0, errorMessage);
-            throw e;
+
+            // 【关键修改】: 根据异常类型，构造并抛出携带详细信息的特定异常
+            if (e instanceof PasswordErrorException) {
+                errorMessage = "密码错误";
+                if (adminUser != null && adminUser.getRoleId() != 1L) {
+                    int remainingAttempts = 3 - Optional.ofNullable(adminUser.getLoginFailCount()).orElse(0);
+                    if (remainingAttempts <= 0) {
+                        errorMessage = String.format("您的账户已被锁定，请在 %d 分钟后重试。", 5);
+                    } else {
+                        errorMessage = String.format("密码错误，还剩 %d 次尝试机会。", remainingAttempts);
+                    }
+                }
+                recordLoginLog(adminId, loginDTO.getUsername(), ip, userAgent, 0, errorMessage);
+                // 抛出带有动态消息的 PasswordErrorException
+                throw new PasswordErrorException(errorMessage);
+
+            } else if (e instanceof AccountForbiddenException) {
+                errorMessage = String.format("您的账户已被禁用或锁定，请在 %d 分钟后重试或联系管理员。", 5);
+                recordLoginLog(adminId, loginDTO.getUsername(), ip, userAgent, 0, errorMessage);
+                // 抛出带有动态消息的 AccountForbiddenException
+                throw new AccountForbiddenException(errorMessage);
+
+            } else {
+                // 对于其他不需要动态消息的异常，直接记录日志并重新抛出
+                recordLoginLog(adminId, loginDTO.getUsername(), ip, userAgent, 0, e.getMessage());
+                throw e;
+            }
         }
     }
+
 
     /**
      * 获取管理员信息
