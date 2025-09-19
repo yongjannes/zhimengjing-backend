@@ -1,8 +1,11 @@
 package com.sf.zhimengjing.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.time.LocalDateTime;
 
 /**
  * @Title: AdminOperationLog
@@ -14,6 +17,13 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @TableName("admin_operation_logs")
 public class AdminOperationLog extends BaseEntity {
+
+    /**
+     * 屏蔽 BaseEntity 的 updateTime 字段
+     */
+    @TableField(exist = false)
+    private LocalDateTime updateTime;
+
     /**
      * 管理员用户ID（关联 admin_users 表）
      */

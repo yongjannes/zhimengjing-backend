@@ -1,5 +1,6 @@
 package com.sf.zhimengjing.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -50,4 +51,16 @@ public class AdminLoginLog extends BaseEntity {
      * 登录失败原因（仅在失败时记录，如密码错误、账户锁定）
      */
     private String failReason;
+
+    /**
+     * 创建时间（数据库表中不存在，仅BaseEntity使用）
+     */
+    @TableField(exist = false)
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间（数据库表中不存在，仅BaseEntity使用）
+     */
+    @TableField(exist = false)
+    private LocalDateTime updateTime;
 }

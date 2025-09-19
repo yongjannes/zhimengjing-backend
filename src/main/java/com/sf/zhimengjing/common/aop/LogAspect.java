@@ -9,8 +9,8 @@ import com.sf.zhimengjing.mapper.AdminOperationLogMapper;
 import com.sf.zhimengjing.mapper.AdminUserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -26,7 +26,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * @description: 系统操作日志切面
  *               使用 AOP 拦截标注了 @Log 注解的方法，实现操作日志的统一记录。
  *               日志包括用户信息、请求路径、请求方法、IP 地址、模块、操作内容、
- *               请求参数以及响应结果。
+ *               请求参数、响应结果以及方法执行时间。
  */
 @Aspect
 @Component
@@ -37,7 +37,6 @@ public class LogAspect {
     private final AdminUserMapper adminUserMapper;
     private final ObjectMapper objectMapper;
 
-
     /**
      * 定义切点：拦截所有标注 @Log 注解的方法
      */
@@ -45,24 +44,33 @@ public class LogAspect {
     public void logPointCut() {}
 
     /**
-     * 后置通知：方法返回后执行，记录操作日志
+     * 环绕通知：记录方法执行时间，并插入日志
      *
      * @param joinPoint 连接点
-     * @param jsonResult 方法返回结果
+     * @return 方法返回结果
+     * @throws Throwable 异常
      */
-    @AfterReturning(pointcut = "logPointCut()", returning = "jsonResult")
-    public void doAfterReturning(JoinPoint joinPoint, Object jsonResult) {
-        handleLog(joinPoint, jsonResult);
+    @Around("logPointCut()")
+    public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
+        long startTime = System.currentTimeMillis();
+        Object result = null;
+        try {
+            result = joinPoint.proceed();
+            return result;
+        } finally {
+            long executeTime = System.currentTimeMillis() - startTime;
+            handleLog(joinPoint, result, executeTime);
+        }
     }
-
 
     /**
      * 处理日志记录逻辑
      *
-     * @param joinPoint 连接点
-     * @param jsonResult 方法返回结果
+     * @param joinPoint   连接点
+     * @param jsonResult  方法返回结果
+     * @param executeTime 方法执行时间(毫秒)
      */
-    protected void handleLog(final JoinPoint joinPoint, Object jsonResult) {
+    protected void handleLog(final ProceedingJoinPoint joinPoint, Object jsonResult, long executeTime) {
         try {
             Log controllerLog = getAnnotationLog(joinPoint);
             if (controllerLog == null) return;
@@ -81,9 +89,12 @@ public class LogAspect {
             operLog.setModule(controllerLog.module());
             operLog.setOperation(controllerLog.operation());
 
-            // 关键：使用ObjectMapper将对象序列化为JSON字符串
+            // 使用ObjectMapper将对象序列化为JSON字符串
             operLog.setRequestParams(objectMapper.writeValueAsString(joinPoint.getArgs()));
             operLog.setResponseResult(objectMapper.writeValueAsString(jsonResult));
+
+            // 设置方法执行时间
+            operLog.setExecuteTime((int) executeTime);
 
             adminOperationLogMapper.insert(operLog);
         } catch (Exception ignored) {
@@ -111,7 +122,7 @@ public class LogAspect {
      * @param joinPoint 连接点
      * @return Log 注解对象，若方法未标注返回 null
      */
-    private Log getAnnotationLog(JoinPoint joinPoint) {
+    private Log getAnnotationLog(ProceedingJoinPoint joinPoint) {
         try {
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
             return signature.getMethod().getAnnotation(Log.class);

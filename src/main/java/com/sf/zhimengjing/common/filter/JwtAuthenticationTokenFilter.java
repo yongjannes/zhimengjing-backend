@@ -1,7 +1,10 @@
 package com.sf.zhimengjing.common.filter;
 
+import com.sf.zhimengjing.common.constant.SystemConstants;
 import com.sf.zhimengjing.common.util.JwtUtils;
+import com.sf.zhimengjing.entity.AdminUser;
 import com.sf.zhimengjing.entity.User;
+import com.sf.zhimengjing.mapper.AdminUserMapper;
 import com.sf.zhimengjing.mapper.UserMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -11,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -36,13 +40,18 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
     private final UserMapper userMapper;
+    private final AdminUserMapper adminUserMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Value("${jwt.refresh-threshold}")
     private long refreshThreshold;
 
-    public JwtAuthenticationTokenFilter(JwtUtils jwtUtils, UserMapper userMapper) {
+    // 👇 修改构造函数以接收 AdminUserMapper
+    public JwtAuthenticationTokenFilter(JwtUtils jwtUtils, UserMapper userMapper, AdminUserMapper adminUserMapper, RedisTemplate<String, Object> redisTemplate) {
         this.jwtUtils = jwtUtils;
         this.userMapper = userMapper;
+        this.adminUserMapper = adminUserMapper;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -64,22 +73,14 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 return;
             }
 
-            Long userId = claims.get("userId", Long.class);
-
-            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                User user = userMapper.selectById(userId);
-
-                if (user != null && user.getStatus()) {
-                    UsernamePasswordAuthenticationToken authenticationToken =
-                            new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
-
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
-                    log.info("[JWT Filter] 用户认证成功: id={}, role={}", user.getId(), user.getUserRole());
-
-                    checkAndRefreshToken(response, claims, user);
+            // 👇 检查当前认证上下文是否为空
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                // 👇 通过 Token 的 subject 判断用户类型
+                String subject = claims.getSubject();
+                if ("admin".equals(subject)) {
+                    handleAdminAuthentication(claims);
                 } else {
-                    log.warn("[JWT Filter] 用户不存在或被禁用: id={}", userId);
+                    handleUserAuthentication(claims, response);
                 }
             }
         } catch (Exception e) {
@@ -89,6 +90,52 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * 处理后台管理员认证
+     */
+    private void handleAdminAuthentication(Claims claims) {
+        Long adminId = claims.get("adminId", Long.class);
+        if (adminId != null) {
+            if (Boolean.FALSE.equals(redisTemplate.hasKey(SystemConstants.REDIS_ADMIN_USER_KEY + adminId))) {
+                log.warn("[JWT Filter] 管理员缓存不存在，可能已登出: id={}", adminId);
+                return;
+            }
+            AdminUser adminUser = adminUserMapper.selectById(adminId);
+            if (adminUser != null && adminUser.getStatus() == 1) {
+                UsernamePasswordAuthenticationToken authenticationToken =
+                        new UsernamePasswordAuthenticationToken(adminId, null, Collections.emptyList());
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                log.info("[JWT Filter] 管理员认证成功: id={}, username={}", adminUser.getId(), adminUser.getUsername());
+            } else {
+                log.warn("[JWT Filter] 管理员不存在或被禁用: id={}", adminId);
+            }
+    }
+
+}
+
+    /**
+     * 处理C端用户认证并刷新Token
+     */
+    private void handleUserAuthentication(Claims claims, HttpServletResponse response) {
+        Long userId = claims.get("userId", Long.class);
+        if (userId != null) {
+            User user = userMapper.selectById(userId);
+            if (user != null && user.getStatus()) {
+                UsernamePasswordAuthenticationToken authenticationToken =
+                        new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                log.info("[JWT Filter] 用户认证成功: id={}, role={}", user.getId(), user.getUserRole());
+                checkAndRefreshToken(response, claims, user);
+            } else {
+                log.warn("[JWT Filter] 用户不存在或被禁用: id={}", userId);
+            }
+        }
+    }
+
+
+    /**
+     * 检查并刷新C端用户的Token (管理员Token无需刷新)
+     */
     private void checkAndRefreshToken(HttpServletResponse response, Claims claims, User user) {
         Date expiration = claims.getExpiration();
         long remainingTimeMillis = expiration.getTime() - System.currentTimeMillis();

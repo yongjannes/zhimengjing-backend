@@ -1,12 +1,8 @@
 package com.sf.zhimengjing.common.config;
 
-import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,21 +31,7 @@ public class Knife4jConfig {
                         .version("v1.0.0")
                         .termsOfService("https://github.com/yongjannes")
                         .contact(new Contact().name("殇枫")
-                                .email("yongjannes@gmail.com")))
-                // 配置全局安全认证方案 (JWT)
-                .components(new Components()
-                        .addSecuritySchemes(SECURITY_SCHEME_NAME,
-                                new SecurityScheme()
-                                        .name("Authorization") // 请求头名称
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")
-                                        .in(SecurityScheme.In.HEADER)
-                                        .description("JWT认证，请在输入框中直接粘贴Token (无需'Bearer '前缀)")
-                        )
-                )
-                // 为所有接口添加安全要求
-                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME));
+                                .email("yongjannes@gmail.com")));
     }
 
     /**

@@ -45,4 +45,5 @@ public class SystemConstants {
     public static final String CACHE_PREFIX_ANALYSIS = "analysis:"; // 解析缓存
     public static final String CACHE_PREFIX_VIP = "vip:";         // VIP缓存
     public static final String CACHE_PREFIX_REPORT = "report:";   // 报告缓存
+    public static final String REDIS_ADMIN_USER_KEY = "zhimengjing:admin:user:";// 后台管理员用户缓存
 }

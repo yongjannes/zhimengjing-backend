@@ -26,6 +26,7 @@ public enum ResultEnum {
     PHONE_EXISTS(1005, "手机号已存在"),
     PASSWORD_ERROR(1006, "密码错误"),
     LOGIN_EXPIRED(1007, "登录已过期"),
+    CAPTCHA_ERROR(1008, "验证码错误"),
 
     // 梦境相关错误码
     DREAM_NOT_FOUND(2001, "梦境不存在"),

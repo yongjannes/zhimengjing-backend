@@ -38,6 +38,7 @@ knife4j:
     enable-footer-custom: true
 
 jwt:
-  secret: yongjannes # 密钥
-  expiration: 43200000 # 过期时间 12h
-  refresh-threshold: 1800000 # 30分钟
+  secret: yongjannes
+  expiration: 7200000          # 2小时
+  refresh-threshold: 1800000   # 30分钟
+
