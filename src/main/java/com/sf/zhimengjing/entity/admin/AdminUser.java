@@ -52,7 +52,7 @@ public class AdminUser extends BaseEntity {
     private Long roleId;
 
     /**
-     * 用户状态（0:禁用，1:正常）
+     * 用户状态（0:禁用，1:正常，2:锁定）
      */
     private Integer status;
 
