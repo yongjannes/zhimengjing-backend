@@ -12,10 +12,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GeneralBusinessException extends  RuntimeException {
-    private int code=0;
-    private String message;
+
 
     public GeneralBusinessException(String message) {
-        this.message = message;
+        super(message);
     }
 }

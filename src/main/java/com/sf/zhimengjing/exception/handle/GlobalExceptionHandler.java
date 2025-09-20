@@ -59,6 +59,14 @@ public class GlobalExceptionHandler {
         return result;
     }
 
+    //通用业务异常处理器
+    @ExceptionHandler(GeneralBusinessException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST) // 通常业务异常是客户端请求不合理导致的，返回400
+    public Result<String> handleGeneralBusinessException(GeneralBusinessException ex) {
+        log.error("捕获到通用业务异常: {}", ex.getMessage());
+        // 直接使用异常中携带的消息创建error Result
+        return Result.error(ex.getMessage());
+    }
     // 登录状态过期异常
     @ExceptionHandler(TokenOverdueException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
@@ -72,8 +80,9 @@ public class GlobalExceptionHandler {
      * 通用异常处理
      */
     @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<String> exceptionHandler(Exception ex) {
-        log.error(ex.getMessage());
+        log.error("捕获到未处理的系统异常: ", ex);
         return Result.error(ResultEnum.FAIL);
     }
 

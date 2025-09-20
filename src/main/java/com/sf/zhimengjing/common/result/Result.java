@@ -33,6 +33,7 @@ public class Result<T> {
     }
 
     public Result(String message) {
+        this.code = ResultEnum.FAIL.getCode();
         this.message = message;
     }
 

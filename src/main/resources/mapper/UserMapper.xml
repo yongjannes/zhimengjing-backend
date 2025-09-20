@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sf.zhimengjing.mapper.UserMapper">
+
+    <!--
+        查询用户增长趋势
+        根据时间范围统计每天新增用户数
+        参数:
+            startTime - 起始时间 (LocalDateTime)
+            endTime - 结束时间 (LocalDateTime)
+        返回:
+            List<UserGrowthTrendVO> 每日新增用户数量
+    -->
+    <select id="getUserGrowthTrend" resultType="com.sf.zhimengjing.common.model.vo.UserGrowthTrendVO">
+        -- 查询用户增长趋势，统计指定时间范围内每天新增用户数量
+
+        SELECT
+            DATE(create_time) AS date,  -- 将 create_time 转为日期，只保留年月日，用作分组字段
+            COUNT(id) AS count           -- 统计每天新增用户数量
+        FROM
+            users                        -- 从 users 表查询数据
+        WHERE
+            create_time BETWEEN #{startTime} AND #{endTime}  -- 过滤指定时间范围内的记录
+        GROUP BY
+            DATE(create_time)            -- 按日期分组统计
+        ORDER BY
+            DATE(create_time) ASC        -- 按日期升序排列
+    </select>
+</mapper>

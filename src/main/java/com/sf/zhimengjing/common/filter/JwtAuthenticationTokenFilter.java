@@ -31,8 +31,8 @@ import java.util.Objects;
  * @Author 殇枫
  * @Package com.sf.zhimengjing.common.filter
  * @Description: JWT 认证过滤器，负责解析请求头中的 Token，
- *               校验用户身份并将认证信息写入 SecurityContext。
- *               同时在 Token 接近过期时自动刷新。
+ * 校验用户身份并将认证信息写入 SecurityContext。
+ * 同时在 Token 接近过期时自动刷新。
  */
 @Component
 @Slf4j
@@ -46,7 +46,6 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     @Value("${jwt.refresh-threshold}")
     private long refreshThreshold;
 
-    // 👇 修改构造函数以接收 AdminUserMapper
     public JwtAuthenticationTokenFilter(JwtUtils jwtUtils, UserMapper userMapper, AdminUserMapper adminUserMapper, RedisTemplate<String, Object> redisTemplate) {
         this.jwtUtils = jwtUtils;
         this.userMapper = userMapper;
@@ -73,9 +72,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // 👇 检查当前认证上下文是否为空
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                // 👇 通过 Token 的 subject 判断用户类型
                 String subject = claims.getSubject();
                 if ("admin".equals(subject)) {
                     handleAdminAuthentication(claims);
@@ -109,9 +106,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             } else {
                 log.warn("[JWT Filter] 管理员不存在或被禁用: id={}", adminId);
             }
+        }
     }
-
-}
 
     /**
      * 处理C端用户认证并刷新Token
@@ -120,18 +116,18 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         Long userId = claims.get("userId", Long.class);
         if (userId != null) {
             User user = userMapper.selectById(userId);
-            if (user != null && user.getStatus()) {
+            // 【已修正】: 检查用户状态是否为1（正常）
+            if (user != null && user.getStatus() == 1) {
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                log.info("[JWT Filter] 用户认证成功: id={}, role={}", user.getId(), user.getUserRole());
+                log.info("[JWT Filter] 用户认证成功: id={}", user.getId());
                 checkAndRefreshToken(response, claims, user);
             } else {
                 log.warn("[JWT Filter] 用户不存在或被禁用: id={}", userId);
             }
         }
     }
-
 
     /**
      * 检查并刷新C端用户的Token (管理员Token无需刷新)
@@ -141,8 +137,9 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         long remainingTimeMillis = expiration.getTime() - System.currentTimeMillis();
 
         if (remainingTimeMillis < refreshThreshold) {
+            // 【已修正】: 不再包含不存在的 userRole
             String newToken = jwtUtils.generateToken(
-                    Map.of("userId", user.getId(), "userRole", user.getUserRole()),
+                    Map.of("userId", user.getId()),
                     "user"
             );
 
