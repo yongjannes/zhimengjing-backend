@@ -1,4 +1,4 @@
-package com.sf.zhimengjing.service;
+package com.sf.zhimengjing.service.admin;
 
 import com.sf.zhimengjing.common.model.vo.CaptchaVO;
 

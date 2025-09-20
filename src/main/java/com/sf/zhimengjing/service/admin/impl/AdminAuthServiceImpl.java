@@ -1,4 +1,4 @@
-package com.sf.zhimengjing.service.impl;
+package com.sf.zhimengjing.service.admin.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -12,14 +12,14 @@ import com.sf.zhimengjing.common.model.vo.AdminInfoVO;
 import com.sf.zhimengjing.common.model.vo.AdminLoginVO;
 import com.sf.zhimengjing.common.util.IpUtils;
 import com.sf.zhimengjing.common.util.JwtUtils;
-import com.sf.zhimengjing.entity.AdminLoginLog;
-import com.sf.zhimengjing.entity.AdminRole;
-import com.sf.zhimengjing.entity.AdminUser;
-import com.sf.zhimengjing.mapper.AdminLoginLogMapper;
-import com.sf.zhimengjing.mapper.AdminRoleMapper;
-import com.sf.zhimengjing.mapper.AdminUserMapper;
-import com.sf.zhimengjing.service.AdminAuthService;
-import com.sf.zhimengjing.service.CaptchaService;
+import com.sf.zhimengjing.entity.admin.AdminLoginLog;
+import com.sf.zhimengjing.entity.admin.AdminRole;
+import com.sf.zhimengjing.entity.admin.AdminUser;
+import com.sf.zhimengjing.mapper.admin.AdminLoginLogMapper;
+import com.sf.zhimengjing.mapper.admin.AdminRoleMapper;
+import com.sf.zhimengjing.mapper.admin.AdminUserMapper;
+import com.sf.zhimengjing.service.admin.AdminAuthService;
+import com.sf.zhimengjing.service.admin.CaptchaService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @Title: AdminAuthServiceImpl
  * @Author: 殇枫
- * @Package: com.sf.zhimengjing.service.impl
+ * @Package: com.sf.zhimengjing.service.admin.impl
  * @description: 管理员认证服务实现类
  *               提供登录、获取管理员信息、注销、修改密码和重置密码等功能。
  *               同时记录登录日志到数据库，并将用户信息缓存到 Redis。

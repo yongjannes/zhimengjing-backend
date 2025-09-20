@@ -2,9 +2,9 @@ package com.sf.zhimengjing.common.filter;
 
 import com.sf.zhimengjing.common.constant.SystemConstants;
 import com.sf.zhimengjing.common.util.JwtUtils;
-import com.sf.zhimengjing.entity.AdminUser;
+import com.sf.zhimengjing.entity.admin.AdminUser;
 import com.sf.zhimengjing.entity.User;
-import com.sf.zhimengjing.mapper.AdminUserMapper;
+import com.sf.zhimengjing.mapper.admin.AdminUserMapper;
 import com.sf.zhimengjing.mapper.UserMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;

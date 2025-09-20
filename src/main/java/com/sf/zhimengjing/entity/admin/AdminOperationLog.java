@@ -1,7 +1,8 @@
-package com.sf.zhimengjing.entity;
+package com.sf.zhimengjing.entity.admin;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.sf.zhimengjing.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

@@ -7,7 +7,7 @@ import com.sf.zhimengjing.common.model.dto.AdminLoginDTO;
 import com.sf.zhimengjing.common.model.vo.AdminInfoVO;
 import com.sf.zhimengjing.common.model.vo.AdminLoginVO;
 import com.sf.zhimengjing.common.result.Result;
-import com.sf.zhimengjing.service.AdminAuthService;
+import com.sf.zhimengjing.service.admin.AdminAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;

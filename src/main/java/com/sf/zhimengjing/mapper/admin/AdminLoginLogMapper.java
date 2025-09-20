@@ -1,7 +1,7 @@
-package com.sf.zhimengjing.mapper;
+package com.sf.zhimengjing.mapper.admin;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.sf.zhimengjing.entity.AdminLoginLog;
+import com.sf.zhimengjing.entity.admin.AdminLoginLog;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

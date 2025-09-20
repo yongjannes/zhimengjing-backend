@@ -1,11 +1,11 @@
-package com.sf.zhimengjing.service.impl;
+package com.sf.zhimengjing.service.admin.impl;
 
 import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.GifCaptcha;
 import cn.hutool.captcha.generator.MathGenerator;
 import cn.hutool.core.math.Calculator;
 import com.sf.zhimengjing.common.model.vo.CaptchaVO;
-import com.sf.zhimengjing.service.CaptchaService;
+import com.sf.zhimengjing.service.admin.CaptchaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @Title: CaptchaServiceImpl
  * @Author 殇枫
- * @Package com.sf.zhimengjing.service.impl
+ * @Package com.sf.zhimengjing.service.admin.impl
  * @description: 验证码服务实现（动图算数验证码）
  */
 @Service

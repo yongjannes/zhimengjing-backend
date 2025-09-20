@@ -1,7 +1,7 @@
 package com.sf.zhimengjing.controller;
 
 import com.sf.zhimengjing.common.model.vo.CaptchaVO;
-import com.sf.zhimengjing.service.CaptchaService;
+import com.sf.zhimengjing.service.admin.CaptchaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
