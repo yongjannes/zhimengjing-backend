@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sf.zhimengjing.common.exception.GeneralBusinessException;
 import com.sf.zhimengjing.common.model.dto.*;
 import com.sf.zhimengjing.common.model.vo.ContentStatisticsVO;
 import com.sf.zhimengjing.common.model.vo.ReportStatisticsVO;
@@ -85,7 +86,7 @@ public class CommunityContentServiceImpl extends ServiceImpl<CommunityPostMapper
     @Transactional
     public boolean batchAuditPosts(List<Long> postIds, Integer status, String rejectReason, Long operatorId) {
         if (status == 2 && !StringUtils.hasText(rejectReason)) {
-            throw new IllegalArgumentException("拒绝时必须填写原因");
+            throw new GeneralBusinessException("拒绝时必须填写原因");
         }
 
         List<CommunityPost> postsToUpdate = new ArrayList<>();
@@ -206,7 +207,7 @@ public class CommunityContentServiceImpl extends ServiceImpl<CommunityPostMapper
     @Transactional
     public boolean batchAuditComments(List<Long> commentIds, Integer status, String rejectReason, Long operatorId) {
         if (status == 2 && !StringUtils.hasText(rejectReason)) {
-            throw new IllegalArgumentException("拒绝时必须填写原因");
+            throw new GeneralBusinessException("拒绝时必须填写原因");
         }
 
         List<CommunityComment> commentsToUpdate = new ArrayList<>();
