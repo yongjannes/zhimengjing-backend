@@ -16,12 +16,12 @@ import java.time.LocalDateTime;
  * @Title: DreamCategoryStatistics
  * @Author: 殇枫
  * @Package: com.dreamanalysis.admin.entity
- * @description: 梦境分类统计实体类，对应表 dream_category_statistics，
+ * @description: 梦境分类统计实体类，对应表 dream_categories_statistics，
  *               用于存储分类相关的统计信息，如梦境数量、平均睡眠质量等。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("dream_category_statistics")
+@TableName("dream_categories_statistics")
 public class DreamCategoryStatistics extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

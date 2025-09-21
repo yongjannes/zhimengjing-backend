@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sf.zhimengjing.mapper.admin.CommunityCommentMapper">
+
+    <!--
+      分页查询评论列表
+      可根据帖子ID、评论用户昵称、评论内容、状态及创建时间区间进行过滤
+      @param query 查询条件 DTO (CommentQueryDTO)
+      @return CommunityComment 分页结果列表，包括评论、作者昵称、头像、所属帖子标题、被回复用户昵称
+    -->
+    <select id="selectCommentPage" resultType="com.sf.zhimengjing.entity.admin.CommunityComment">
+        SELECT
+        c.*,
+        u.nickname,
+        u.avatar,
+        p.title as postTitle,
+        ru.username as replyToNickname
+        FROM community_comments c
+        LEFT JOIN `users` u ON c.user_id = u.id
+        LEFT JOIN community_posts p ON c.post_id = p.id
+        LEFT JOIN `users` ru ON c.reply_to_user_id = ru.id
+        <where>
+            <if test="query.postId != null">
+                AND c.post_id = #{query.postId}
+            </if>
+            <if test="query.username!= null and query.username!= ''">
+                AND u.usernameLIKE CONCAT('%', #{query.nickname}, '%')
+            </if>
+            <if test="query.content != null and query.content != ''">
+                AND c.content LIKE CONCAT('%', #{query.content}, '%')
+            </if>
+            <if test="query.status != null">
+                AND c.status = #{query.status}
+            </if>
+            <if test="query.startDate != null">
+                AND c.create_time >= #{query.startDate}
+            </if>
+            <if test="query.endDate != null">
+                AND c.create_time &lt;= #{query.endDate}
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+    </select>
+
+    <!--
+      按时间区间统计评论数量
+      @param params 包含 startTime 和 endTime 的 Map
+      @return long 指定时间范围内的评论数量
+    -->
+    <select id="countByTimeRange" resultType="long">
+        SELECT count(id)
+        FROM community_comments
+        WHERE create_time >= #{params.startTime}
+          AND create_time &lt; #{params.endTime}
+    </select>
+
+</mapper>

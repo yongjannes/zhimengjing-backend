@@ -14,12 +14,12 @@ import java.io.Serializable;
  * @Title: DreamCategoryRelation
  * @Author: 殇枫
  * @Package: com.dreamanalysis.admin.entity
- * @description: 梦境分类关系实体类，对应表 dream_category_relations，
+ * @description: 梦境分类关系实体类，对应表 dream_categories_relations，
  *               用于存储分类之间的祖先-后代关系，用于支持多级分类树结构。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("dream_category_relations")
+@TableName("dream_categories_relations")
 public class DreamCategoryRelation extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

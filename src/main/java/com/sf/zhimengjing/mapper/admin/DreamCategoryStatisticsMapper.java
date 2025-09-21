@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Mapper;
  * @Author: 殇枫
  * @Package: com.sf.zhimengjing.mapper.admin
  * @description: 梦境分类统计 Mapper 接口，继承 MyBatis-Plus BaseMapper，
- *               提供对 dream_category_statistics 表的 CRUD 操作，
+ *               提供对 dream_categories_statistics 表的 CRUD 操作，
  *               用于存储和查询分类相关的统计数据，如梦境数量、审核状态及平均睡眠质量。
  */
 @Mapper

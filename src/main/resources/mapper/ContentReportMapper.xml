@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.sf.zhimengjing.mapper.admin.ContentReportMapper">
+
+    <!--
+      分页查询举报列表
+      可根据内容类型、举报类型、处理状态、创建时间区间过滤
+      @param query 查询条件 DTO (ReportQueryDTO)
+      @return ContentReport 分页结果列表，包括举报人昵称、被举报人昵称和处理管理员姓名
+    -->
+    <select id="selectReportPage" resultType="com.sf.zhimengjing.entity.admin.ContentReport">
+        SELECT
+        r.*,
+        reporter.username AS reporterNickname,
+        reported.username AS reportedNickname,
+        admin.username AS handlerAdminName
+        FROM content_reports r
+        LEFT JOIN `users` reporter ON r.reporter_user_id = reporter.id
+        LEFT JOIN `users` reported ON r.reported_user_id = reported.id
+        LEFT JOIN admin_users admin ON r.handler_admin_id = admin.id
+        <where>
+            <if test="query.contentType != null">
+                AND r.content_type = #{query.contentType}
+            </if>
+            <if test="query.reportType != null">
+                AND r.report_type = #{query.reportType}
+            </if>
+            <if test="query.status != null">
+                AND r.status = #{query.status}
+            </if>
+            <if test="query.startDate != null">
+                AND r.create_time >= #{query.startDate}
+            </if>
+            <if test="query.endDate != null">
+                AND r.create_time &lt;= #{query.endDate}
+            </if>
+        </where>
+        ORDER BY r.status ASC, r.create_time DESC
+    </select>
+
+    <!--
+      根据举报ID查询举报详情
+      @param id 举报ID
+      @return ContentReport 举报详情，包括举报人昵称、被举报人昵称和处理管理员姓名
+    -->
+    <select id="selectReportDetailById" resultType="com.sf.zhimengjing.entity.admin.ContentReport">
+        SELECT
+            r.*,
+            reporter.username AS reporterNickname,
+            reported.username AS reportedNickname,
+            admin.username AS handlerAdminName
+        FROM content_reports r
+                 LEFT JOIN `users` reporter ON r.reporter_user_id = reporter.id
+                 LEFT JOIN `users` reported ON r.reported_user_id = reported.id
+                 LEFT JOIN admin_users admin ON r.handler_admin_id = admin.id
+        WHERE r.id = #{id}
+    </select>
+
+</mapper>

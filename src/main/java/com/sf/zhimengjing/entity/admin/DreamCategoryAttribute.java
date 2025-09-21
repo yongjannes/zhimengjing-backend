@@ -12,12 +12,12 @@ import java.io.Serializable;
  * @Title: DreamCategoryAttribute
  * @Author: 殇枫
  * @Package: com.dreamanalysis.admin.entity
- * @description: 梦境分类属性实体类，对应表 dream_category_attributes，
+ * @description: 梦境分类属性实体类，对应表 dream_categories_attributes，
  *               用于存储梦境分类的属性信息。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("dream_category_attributes")
+@TableName("dream_categories_attributes")
 public class DreamCategoryAttribute extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

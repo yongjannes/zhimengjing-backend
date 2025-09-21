@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sf.zhimengjing.mapper.admin.CommunityPostMapper">
+
+    <!--
+      分页查询帖子列表，可根据昵称、标题、分类、状态、置顶、热门、创建时间区间过滤
+      @param query 查询条件 DTO
+      @return CommunityPost 分页结果列表
+    -->
+    <select id="selectPostPage" resultType="com.sf.zhimengjing.entity.admin.CommunityPost">
+        SELECT
+        p.*, u.nickname, u.avatar, c.name as categoryName
+        FROM community_posts p
+        LEFT JOIN `users` u ON p.user_id = u.id
+        LEFT JOIN dream_categories c ON p.category_id = c.id
+        <where>
+            <if test="query.username!= null and query.username!= ''">
+                AND u.usernameLIKE CONCAT('%', #{query.nickname}, '%')
+            </if>
+            <if test="query.title != null and query.title != ''">
+                AND p.title LIKE CONCAT('%', #{query.title}, '%')
+            </if>
+            <if test="query.categoryId != null">
+                AND p.category_id = #{query.categoryId}
+            </if>
+            <if test="query.status != null">
+                AND p.status = #{query.status}
+            </if>
+            <if test="query.isTop != null">
+                AND p.is_top = #{query.isTop}
+            </if>
+            <if test="query.isHot != null">
+                AND p.is_hot = #{query.isHot}
+            </if>
+            <if test="query.startDate != null">
+                AND p.create_time >= #{query.startDate}
+            </if>
+            <if test="query.endDate != null">
+                AND p.create_time &lt;= #{query.endDate}
+            </if>
+        </where>
+        ORDER BY p.is_top DESC, p.create_time DESC
+    </select>
+
+    <!--
+      根据帖子ID查询帖子详情，包括作者昵称、头像和分类名称
+      @param id 帖子ID
+      @return CommunityPost 帖子详情
+    -->
+    <select id="selectPostDetailById" resultType="com.sf.zhimengjing.entity.admin.CommunityPost">
+        SELECT
+            p.*, u.nickname, u.avatar, c.name as categoryName
+        FROM community_posts p
+                 LEFT JOIN `users` u ON p.user_id = u.id
+                 LEFT JOIN dream_categories c ON p.category_id = c.id
+        WHERE p.id = #{id}
+    </select>
+
+    <!--
+      按时间区间统计帖子数量
+      @param params 包含 startTime 和 endTime 的 Map
+      @return long 帖子数量
+    -->
+    <select id="countByTimeRange" resultType="long">
+        SELECT count(id) FROM community_posts
+        WHERE create_time >= #{params.startTime} AND create_time &lt; #{params.endTime}
+    </select>
+
+</mapper>

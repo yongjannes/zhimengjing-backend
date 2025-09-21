@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Mapper;
  * @Author: 殇枫
  * @Package: com.sf.zhimengjing.mapper.admin
  * @description: 梦境分类属性 Mapper 接口，继承 MyBatis-Plus BaseMapper，
- *               提供对 dream_category_attributes 表的 CRUD 操作。
+ *               提供对 dream_categories_attributes 表的 CRUD 操作。
  */
 @Mapper
 public interface DreamCategoryAttributeMapper extends BaseMapper<DreamCategoryAttribute> {
