@@ -1,9 +1,8 @@
 package com.sf.zhimengjing.common.model.vo;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
-
 import java.util.List;
 
 /**
@@ -14,17 +13,18 @@ import java.util.List;
  */
 @Data
 @Builder
+@Schema(description = "管理员信息VO")
 public class AdminInfoVO {
-    @ApiModelProperty("管理员ID")
+    @Schema(description = "管理员ID")
     private Long id;
-    @ApiModelProperty("用户名")
+    @Schema(description = "用户名")
     private String username;
-    @ApiModelProperty("真实姓名")
+    @Schema(description = "真实姓名")
     private String realName;
-    @ApiModelProperty("头像URL")
+    @Schema(description = "头像URL")
     private String avatar;
-    @ApiModelProperty("角色编码列表")
+    @Schema(description = "角色编码列表")
     private List<String> roles;
-    @ApiModelProperty("权限标识列表")
+    @Schema(description = "权限标识列表")
     private List<String> permissions;
 }

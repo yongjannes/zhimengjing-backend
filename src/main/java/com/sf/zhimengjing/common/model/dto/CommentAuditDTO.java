@@ -1,10 +1,8 @@
 package com.sf.zhimengjing.common.model.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
-
 import java.util.List;
 
 /**
@@ -14,14 +12,14 @@ import java.util.List;
  * @description: 社区评论审核DTO，用于封装批量审核评论请求数据
  */
 @Data
-@ApiModel(description = "评论审核DTO")
+@Schema(description = "评论审核DTO")
 public class CommentAuditDTO {
 
     /**
      * 评论ID列表，必填，用于标识需要审核的评论
      */
     @NotEmpty(message = "评论ID列表不能为空")
-    @ApiModelProperty(value = "评论ID列表", required = true)
+    @Schema(description = "评论ID列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<Long> commentIds;
 
     /**
@@ -30,12 +28,12 @@ public class CommentAuditDTO {
      * 2 - 拒绝
      */
     @NotEmpty(message = "审核状态不能为空")
-    @ApiModelProperty(value = "审核状态：1-通过，2-拒绝", required = true)
+    @Schema(description = "审核状态：1-通过，2-拒绝", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer status;
 
     /**
      * 拒绝原因，仅在 status=2（拒绝）时必填
      */
-    @ApiModelProperty("拒绝原因（status=2时必填）")
+    @Schema(description = "拒绝原因（status=2时必填）")
     private String rejectReason;
 }

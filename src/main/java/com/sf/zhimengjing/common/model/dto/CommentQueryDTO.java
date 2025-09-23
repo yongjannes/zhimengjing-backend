@@ -1,10 +1,8 @@
 package com.sf.zhimengjing.common.model.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
 import java.time.LocalDateTime;
 
 /**
@@ -15,19 +13,19 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel(description = "社区评论查询DTO")
+@Schema(description = "社区评论查询DTO")
 public class CommentQueryDTO extends UserQueryDTO {
 
     /**
      * 所属帖子ID，用于按帖子过滤评论
      */
-    @ApiModelProperty("帖子ID")
+    @Schema(description = "帖子ID")
     private Long postId;
 
     /**
      * 评论内容，支持模糊查询
      */
-    @ApiModelProperty("评论内容（模糊查询）")
+    @Schema(description = "评论内容（模糊查询）")
     private String content;
 
     /**
@@ -37,12 +35,14 @@ public class CommentQueryDTO extends UserQueryDTO {
      * 2 - 已拒绝
      * 3 - 已删除
      */
-    @ApiModelProperty("状态：0-待审核，1-已通过，2-已拒绝，3-已删除")
+    @Schema(description = "状态：0-待审核，1-已通过，2-已拒绝，3-已删除")
     private Integer status;
 
     /** 评论开始时间 */
+    @Schema(description = "评论开始时间")
     private LocalDateTime startDate;
 
     /** 评论结束时间 */
+    @Schema(description = "评论结束时间")
     private LocalDateTime endDate;
 }

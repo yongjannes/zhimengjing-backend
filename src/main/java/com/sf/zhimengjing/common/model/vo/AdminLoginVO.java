@@ -1,6 +1,6 @@
 package com.sf.zhimengjing.common.model.vo;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,7 +12,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@Schema(description = "管理员登录VO")
 public class AdminLoginVO {
-    @ApiModelProperty("JWT令牌")
+    @Schema(description = "JWT令牌")
     private String token;
 }

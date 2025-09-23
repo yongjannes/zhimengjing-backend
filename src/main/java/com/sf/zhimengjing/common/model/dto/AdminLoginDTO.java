@@ -1,6 +1,6 @@
 package com.sf.zhimengjing.common.model.dto;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
@@ -11,17 +11,21 @@ import lombok.Data;
  * @description: 管理员登录数据传输对象（DTO）
  */
 @Data
+@Schema(description = "管理员登录DTO")
 public class AdminLoginDTO {
-    @ApiModelProperty(value = "用户名", required = true)
+    @Schema(description = "用户名", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotEmpty(message = "用户名不能为空")
     private String username;
-    @ApiModelProperty(value = "密码", required = true)
+
+    @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotEmpty(message = "密码不能为空")
     private String password;
-    @ApiModelProperty(value = "验证码", required = true)
+
+    @Schema(description = "验证码", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotEmpty(message = "验证码不能为空")
     private String captcha;
-    @ApiModelProperty(value = "验证码Key", required = true)
+
+    @Schema(description = "验证码Key", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotEmpty(message = "验证码Key不能为空")
     private String captchaKey;
 }

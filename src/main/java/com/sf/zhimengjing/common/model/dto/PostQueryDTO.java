@@ -1,6 +1,5 @@
 package com.sf.zhimengjing.common.model.dto;
 
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,7 +20,7 @@ public class PostQueryDTO extends UserQueryDTO {
     /**
      * 帖子标题，支持模糊查询
      */
-    @ApiModelProperty("帖子标题（模糊查询）")
+    @Schema(description = "帖子标题（模糊查询）")
     private String title;
 
     /**
@@ -53,9 +52,11 @@ public class PostQueryDTO extends UserQueryDTO {
     private Boolean isHot;
 
     /** 帖子开始时间 */
+    @Schema(description = "帖子开始时间")
     private LocalDateTime startDate;
 
     /** 帖子结束时间 */
+    @Schema(description = "帖子结束时间")
     private LocalDateTime endDate;
 
 }
