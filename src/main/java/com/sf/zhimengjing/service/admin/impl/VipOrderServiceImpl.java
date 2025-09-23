@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sf.zhimengjing.common.exception.GeneralBusinessException;
 import com.sf.zhimengjing.common.model.dto.VipOrderDTO;
 import com.sf.zhimengjing.entity.admin.VipLevel;
 import com.sf.zhimengjing.entity.admin.VipOrder;
@@ -39,7 +40,7 @@ public class VipOrderServiceImpl extends ServiceImpl<VipOrderMapper, VipOrder> i
     public VipOrderDTO createOrder(VipOrderDTO.CreateOrderDTO createDTO, Long userId) {
         VipLevel level = vipLevelService.getById(createDTO.getLevelId());
         if (level == null) {
-            throw new RuntimeException("VIP等级不存在");
+            throw new GeneralBusinessException("VIP等级不存在");
         }
 
         VipOrder order = new VipOrder();
@@ -98,11 +99,11 @@ public class VipOrderServiceImpl extends ServiceImpl<VipOrderMapper, VipOrder> i
     public Map<String, String> processPayment(Long orderId, VipOrderDTO.PaymentDTO paymentDTO) {
         VipOrder order = this.getById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new GeneralBusinessException("订单不存在");
         }
 
         if (!"pending".equals(order.getOrderStatus())) {
-            throw new RuntimeException("订单状态异常");
+            throw new GeneralBusinessException("订单状态异常");
         }
 
         // 更新支付信息
@@ -152,11 +153,11 @@ public class VipOrderServiceImpl extends ServiceImpl<VipOrderMapper, VipOrder> i
     public boolean cancelOrder(Long orderId, String reason) {
         VipOrder order = this.getById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new GeneralBusinessException("订单不存在");
         }
 
         if (!"pending".equals(order.getOrderStatus())) {
-            throw new RuntimeException("订单状态不允许取消");
+            throw new GeneralBusinessException("订单状态不允许取消");
         }
 
         order.setOrderStatus("cancelled");
@@ -169,11 +170,11 @@ public class VipOrderServiceImpl extends ServiceImpl<VipOrderMapper, VipOrder> i
     public boolean applyRefund(Long orderId, BigDecimal refundAmount, String reason) {
         VipOrder order = this.getById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new GeneralBusinessException("订单不存在");
         }
 
         if (!"paid".equals(order.getOrderStatus())) {
-            throw new RuntimeException("订单状态不允许退款");
+            throw new GeneralBusinessException("订单状态不允许退款");
         }
 
         order.setRefundStatus("refunding");
@@ -189,7 +190,7 @@ public class VipOrderServiceImpl extends ServiceImpl<VipOrderMapper, VipOrder> i
     public boolean processRefund(Long orderId, String refundStatus, String refundReason) {
         VipOrder order = this.getById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new GeneralBusinessException("订单不存在");
         }
 
         order.setRefundStatus(refundStatus);

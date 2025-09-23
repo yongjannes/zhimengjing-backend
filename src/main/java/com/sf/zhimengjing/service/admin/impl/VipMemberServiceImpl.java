@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sf.zhimengjing.common.exception.GeneralBusinessException;
 import com.sf.zhimengjing.common.model.dto.VipBenefitsDTO;
 import com.sf.zhimengjing.entity.admin.VipLevel;
 import com.sf.zhimengjing.entity.admin.VipMember;
@@ -64,12 +65,12 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
         // 检查用户是否已有会员资格
         VipMember existingMember = this.getOne(new LambdaQueryWrapper<VipMember>().eq(VipMember::getUserId, userId));
         if (existingMember != null) {
-            throw new RuntimeException("用户已有会员资格");
+            throw new GeneralBusinessException("用户已有会员资格");
         }
 
         VipLevel level = vipLevelService.getById(levelId);
         if (level == null) {
-            throw new RuntimeException("VIP等级不存在");
+            throw new GeneralBusinessException("VIP等级不存在");
         }
 
         VipMember member = new VipMember();
@@ -93,7 +94,7 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
     public boolean renewMember(Long userId, Integer durationMonths) {
         VipMember member = this.getOne(new LambdaQueryWrapper<VipMember>().eq(VipMember::getUserId, userId));
         if (member == null) {
-            throw new RuntimeException("会员不存在");
+            throw new GeneralBusinessException("会员不存在");
         }
 
         // 延长到期时间
@@ -110,12 +111,12 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
     public boolean upgradeMemberLevel(Long userId, Long targetLevelId) {
         VipMember member = this.getOne(new LambdaQueryWrapper<VipMember>().eq(VipMember::getUserId, userId));
         if (member == null) {
-            throw new RuntimeException("会员不存在");
+            throw new GeneralBusinessException("会员不存在");
         }
 
         VipLevel targetLevel = vipLevelService.getById(targetLevelId);
         if (targetLevel == null) {
-            throw new RuntimeException("目标等级不存在");
+            throw new GeneralBusinessException("目标等级不存在");
         }
 
         member.setLevelId(targetLevelId);
@@ -131,12 +132,12 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
     public boolean downgradeMemberLevel(Long userId, Long targetLevelId) {
         VipMember member = this.getOne(new LambdaQueryWrapper<VipMember>().eq(VipMember::getUserId, userId));
         if (member == null) {
-            throw new RuntimeException("会员不存在");
+            throw new GeneralBusinessException("会员不存在");
         }
 
         VipLevel targetLevel = vipLevelService.getById(targetLevelId);
         if (targetLevel == null) {
-            throw new RuntimeException("目标等级不存在");
+            throw new GeneralBusinessException("目标等级不存在");
         }
 
         member.setLevelId(targetLevelId);
@@ -152,7 +153,7 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
     public boolean cancelMembership(Long userId, String reason) {
         VipMember member = this.getOne(new LambdaQueryWrapper<VipMember>().eq(VipMember::getUserId, userId));
         if (member == null) {
-            throw new RuntimeException("会员不存在");
+            throw new GeneralBusinessException("会员不存在");
         }
 
         member.setStatus("cancelled");
@@ -198,11 +199,11 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
     public boolean useAnalysisCount(Long userId, Integer count) {
         VipMember member = this.getOne(new LambdaQueryWrapper<VipMember>().eq(VipMember::getUserId, userId));
         if (member == null || !"active".equals(member.getStatus())) {
-            throw new RuntimeException("会员不存在或状态异常");
+            throw new GeneralBusinessException("会员不存在或状态异常");
         }
 
         if (member.getRemainingAnalysisCount() < count) {
-            throw new RuntimeException("解析次数不足");
+            throw new GeneralBusinessException("解析次数不足");
         }
 
         member.setRemainingAnalysisCount(member.getRemainingAnalysisCount() - count);
