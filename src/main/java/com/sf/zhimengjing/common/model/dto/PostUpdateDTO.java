@@ -47,4 +47,23 @@ public class PostUpdateDTO {
      */
     @ApiModelProperty("标签列表")
     private List<String> tags;
+
+    // 添加以下字段以支持全面更新
+    @ApiModelProperty("是否公开")
+    private Boolean isAnonymous;
+
+    @ApiModelProperty("是否置顶")
+    private Boolean isTop;
+
+    @ApiModelProperty("是否热门")
+    private Boolean isHot;
+
+    @ApiModelProperty("帖子状态（0-待审核, 1-已发布, 2-已拒绝, 3-已删除）")
+    private Integer status;
+
+    @ApiModelProperty("拒绝原因")
+    private String rejectReason;
+
+    @ApiModelProperty("管理员备注")
+    private String adminRemark;
 }

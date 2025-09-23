@@ -9,6 +9,7 @@ import com.sf.zhimengjing.common.exception.GeneralBusinessException;
 import com.sf.zhimengjing.common.model.dto.*;
 import com.sf.zhimengjing.common.model.vo.ContentStatisticsVO;
 import com.sf.zhimengjing.common.model.vo.ReportStatisticsVO;
+import com.sf.zhimengjing.common.util.BeanUtilsEx;
 import com.sf.zhimengjing.entity.admin.CommunityComment;
 import com.sf.zhimengjing.entity.admin.CommunityPost;
 import com.sf.zhimengjing.entity.admin.ContentReport;
@@ -19,7 +20,6 @@ import com.sf.zhimengjing.service.admin.CommunityContentService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -117,8 +117,20 @@ public class CommunityContentServiceImpl extends ServiceImpl<CommunityPostMapper
     @Override
     @Transactional
     public boolean updatePost(PostUpdateDTO updateDTO) {
-        CommunityPost post = new CommunityPost();
-        BeanUtils.copyProperties(updateDTO, post);
+        // 1. 查询现有帖子
+        CommunityPost post = this.getById(updateDTO.getId());
+        if (post == null) {
+            throw new GeneralBusinessException("帖子不存在");
+        }
+
+        // 2. 使用 BeanUtilsEx 拷贝非空字段
+        org.springframework.beans.BeanUtils.copyProperties(
+                updateDTO,
+                post,
+                BeanUtilsEx.getNullPropertyNames(updateDTO)
+        );
+
+        // 3. 更新数据库
         return this.updateById(post);
     }
 

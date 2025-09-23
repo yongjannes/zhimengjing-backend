@@ -8,6 +8,7 @@ import com.sf.zhimengjing.common.model.dto.CategoryDTO;
 import com.sf.zhimengjing.common.model.dto.CategoryQueryDTO;
 import com.sf.zhimengjing.common.model.vo.CategoryStatisticsVO;
 import com.sf.zhimengjing.common.model.vo.CategoryVO;
+import com.sf.zhimengjing.common.util.BeanUtilsEx;
 import com.sf.zhimengjing.entity.admin.DreamCategory;
 import com.sf.zhimengjing.entity.admin.DreamCategoryRelation;
 import com.sf.zhimengjing.entity.admin.DreamCategoryStatistics;
@@ -111,15 +112,29 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
     @Override
     @Transactional
     public CategoryVO updateCategory(Long categoryId, CategoryDTO updateDTO, Long updaterId) {
+        // 1. 查询现有分类
         DreamCategory category = categoryMapper.selectById(categoryId);
         if (category == null) {
             throw new GeneralBusinessException("分类不存在");
         }
+
+        // 2. 校验分类名称唯一性
         validateCategoryNameUnique(updateDTO.getName(), categoryId);
-        BeanUtils.copyProperties(updateDTO, category);
-        category.setId((long) Math.toIntExact(categoryId));
+
+        // 3. 拷贝 DTO 中非空字段到实体，保证数据库其他字段不被覆盖
+        org.springframework.beans.BeanUtils.copyProperties(
+                updateDTO,
+                category,
+                BeanUtilsEx.getNullPropertyNames(updateDTO)
+        );
+
+        // 4. 设置更新人
         category.setUpdatedBy(updaterId);
+
+        // 5. 更新数据库
         categoryMapper.updateById(category);
+
+        // 6. 返回 VO 对象
         return convertToCategoryVO(category);
     }
 
