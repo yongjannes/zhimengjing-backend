@@ -2,10 +2,10 @@ package com.sf.zhimengjing.common.filter;
 
 import com.sf.zhimengjing.common.constant.SystemConstants;
 import com.sf.zhimengjing.common.util.JwtUtils;
-import com.sf.zhimengjing.entity.admin.AdminUser;
 import com.sf.zhimengjing.entity.User;
-import com.sf.zhimengjing.mapper.admin.AdminUserMapper;
+import com.sf.zhimengjing.entity.admin.AdminUser;
 import com.sf.zhimengjing.mapper.UserMapper;
+import com.sf.zhimengjing.mapper.admin.AdminUserMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,8 +22,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Date;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -42,6 +40,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     private final UserMapper userMapper;
     private final AdminUserMapper adminUserMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+
 
     @Value("${jwt.refresh-threshold}")
     private long refreshThreshold;
@@ -77,9 +76,10 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 if ("admin".equals(subject)) {
                     handleAdminAuthentication(claims);
                 } else {
-                    handleUserAuthentication(claims, response);
+                    handleUserAuthentication(token,claims, response);
                 }
             }
+
         } catch (Exception e) {
             log.error("[JWT Filter] Token 处理异常", e);
         }
@@ -112,7 +112,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     /**
      * 处理C端用户认证并刷新Token
      */
-    private void handleUserAuthentication(Claims claims, HttpServletResponse response) {
+    private void handleUserAuthentication(String token,Claims claims, HttpServletResponse response) {
         Long userId = claims.get("userId", Long.class);
         if (userId != null) {
             User user = userMapper.selectById(userId);
@@ -122,29 +122,28 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 log.info("[JWT Filter] 用户认证成功: id={}", user.getId());
-                checkAndRefreshToken(response, claims, user);
+                tryToRefreshToken(token, claims, response);
             } else {
                 log.warn("[JWT Filter] 用户不存在或被禁用: id={}", userId);
             }
         }
     }
 
-    /**
-     * 检查并刷新C端用户的Token (管理员Token无需刷新)
-     */
-    private void checkAndRefreshToken(HttpServletResponse response, Claims claims, User user) {
-        Date expiration = claims.getExpiration();
-        long remainingTimeMillis = expiration.getTime() - System.currentTimeMillis();
 
-        if (remainingTimeMillis < refreshThreshold) {
-            // 【已修正】: 不再包含不存在的 userRole
-            String newToken = jwtUtils.generateToken(
-                    Map.of("userId", user.getId()),
-                    "user"
-            );
+    private void tryToRefreshToken(String token, Claims claims, HttpServletResponse response) {
+        long expirationTime = claims.getExpiration().getTime();
+        long currentTime = System.currentTimeMillis();
 
+        // 判断剩余有效期是否小于刷新阈值
+        if ((expirationTime - currentTime) < refreshThreshold) {
+            log.info("[JWT Filter] Token 即将过期，准备刷新...");
+            // 调用工具类中的 refreshToken 方法生成新令牌
+            String newToken = jwtUtils.refreshToken(token);
+            // 将新令牌设置在响应头中
             response.setHeader("Authorization", "Bearer " + newToken);
-            log.info("[JWT Filter] Token 已刷新，用户 id={}", user.getId());
+            // 暴露自定义的响应头 "Authorization"，以便前端JS可以访问
+            response.setHeader("Access-Control-Expose-Headers", "Authorization");
+            log.info("[JWT Filter] Token 刷新成功！");
         }
     }
 }

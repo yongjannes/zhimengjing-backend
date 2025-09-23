@@ -11,6 +11,12 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * @Title: VipOrderDTO
+ * @Author: 殇枫
+ * @Package: com.sf.zhimengjing.common.model.dto
+ * @Description: VIP订单相关的数据传输对象，包括订单详情、创建订单请求、支付请求等
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -93,30 +99,54 @@ public class VipOrderDTO implements Serializable {
     @Schema(description = "创建时间")
     private LocalDateTime createdAt;
 
+    // ---------------- 内部 DTO ----------------
+
+    /**
+     * @Title: CreateOrderDTO
+     * @Author: 殇枫
+     * @Description: 创建VIP订单请求DTO
+     */
     @Data
     @Schema(description = "创建订单请求DTO")
     public static class CreateOrderDTO implements Serializable {
+
         @NotNull(message = "VIP等级ID不能为空")
+        @Schema(description = "VIP等级ID", required = true)
         private Long levelId;
 
         @NotBlank(message = "订单类型不能为空")
+        @Schema(description = "订单类型（月卡/季卡/年卡）", required = true)
         private String orderType;
 
         @NotNull(message = "购买时长不能为空")
         @Min(value = 1, message = "购买时长必须大于0")
+        @Schema(description = "购买时长（月）", required = true)
         private Integer durationMonths;
 
+        @Schema(description = "优惠券ID，可选")
         private Long couponId;
+
+        @Schema(description = "是否自动续费，可选")
         private Boolean autoRenew;
     }
 
+    /**
+     * @Title: PaymentDTO
+     * @Author: 殇枫
+     * @Description: 支付请求DTO
+     */
     @Data
     @Schema(description = "支付请求DTO")
     public static class PaymentDTO implements Serializable {
+
         @NotBlank(message = "支付方式不能为空")
+        @Schema(description = "支付方式", required = true)
         private String paymentMethod;
 
+        @Schema(description = "支付成功回调URL，可选")
         private String returnUrl;
+
+        @Schema(description = "支付异步通知URL，可选")
         private String notifyUrl;
     }
 }

@@ -1,7 +1,7 @@
 package com.sf.zhimengjing.common.model.dto;
 
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel(description = "社区帖子查询DTO")
+@Schema(description = "社区帖子查询DTO")
 public class PostQueryDTO extends UserQueryDTO {
 
     /**
@@ -27,7 +27,7 @@ public class PostQueryDTO extends UserQueryDTO {
     /**
      * 分类ID，用于按分类过滤帖子
      */
-    @ApiModelProperty("分类ID")
+    @Schema(description ="分类ID")
     private Integer categoryId;
 
     /**
@@ -37,19 +37,19 @@ public class PostQueryDTO extends UserQueryDTO {
      * 2 - 已拒绝
      * 3 - 已删除
      */
-    @ApiModelProperty("状态：0-待审核，1-已通过，2-已拒绝，3-已删除")
+    @Schema(description="状态：0-待审核，1-已通过，2-已拒绝，3-已删除")
     private Integer status;
 
     /**
      * 是否置顶，true-置顶，false-非置顶
      */
-    @ApiModelProperty("是否置顶")
+    @Schema(description="是否置顶")
     private Boolean isTop;
 
     /**
      * 是否热门，true-热门，false-非热门
      */
-    @ApiModelProperty("是否热门")
+    @Schema(description="是否热门")
     private Boolean isHot;
 
     /** 帖子开始时间 */
