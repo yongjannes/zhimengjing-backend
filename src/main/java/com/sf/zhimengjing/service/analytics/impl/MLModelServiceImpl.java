@@ -39,11 +39,10 @@ public class MLModelServiceImpl extends ServiceImpl<MLModelMapper, MLModel> impl
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public MLModel trainModel(MLModelTrainDTO trainDTO) {
+    public MLModelVO trainModel(MLModelTrainDTO trainDTO) {
         log.info("开始训练模型，模型类型：{}，模型名称：{}", trainDTO.getModelType(), trainDTO.getModelName());
 
         try {
-            // 【修正】移除本地方法校验，依赖于 Controller 层的 @Valid 注解
             // 检查是否已存在相同名称的模型
             LambdaQueryWrapper<MLModel> wrapper = new LambdaQueryWrapper<MLModel>()
                     .eq(MLModel::getModelName, trainDTO.getModelName());
@@ -52,38 +51,29 @@ public class MLModelServiceImpl extends ServiceImpl<MLModelMapper, MLModel> impl
                 throw new GeneralBusinessException("已存在同名的模型");
             }
 
-            // 【修正】使用 Setter 创建模型实体，而非 Builder
             MLModel model = new MLModel();
             model.setModelName(trainDTO.getModelName());
             model.setModelType(trainDTO.getModelType());
-
-            // 【修正】为 version 和 algorithm 设置默认值或从参数中提取
             model.setModelVersion("1.0.0"); // 设置默认版本号
             model.setAlgorithmName(
                     trainDTO.getHyperparameters().getOrDefault("algorithm", "default_algorithm").toString()
             );
 
-            // 【修正】序列化参数为JSON字符串
             model.setModelParameters(JSONUtil.toJsonStr(trainDTO.getHyperparameters()));
 
-            // 【修正】从 datasetConfig 中获取训练数据大小
             Object dataSize = trainDTO.getDatasetConfig().get("size");
             if (dataSize instanceof Number) {
                 model.setTrainingDataSize(((Number) dataSize).longValue());
             }
 
-            model.setModelStatus("training"); // 设置初始状态
-            // createTime 和 updateTime 将由 MyMetaObjectHandler 自动填充
+            model.setModelStatus("training");
 
-            // 保存模型记录
             this.save(model);
 
-            // 启动异步训练任务
             startAsyncTraining(model);
 
-            // 【修正】使用 getId() 获取模型ID
             log.info("模型训练任务已启动，模型ID：{}", model.getId());
-            return model;
+            return convertToVO(model);
 
         } catch (GeneralBusinessException e) {
             throw e;
@@ -111,26 +101,22 @@ public class MLModelServiceImpl extends ServiceImpl<MLModelMapper, MLModel> impl
         }
 
         try {
-            // 检查模型性能是否满足部署要求
             if (model.getAccuracyScore() != null &&
                     model.getAccuracyScore().compareTo(new BigDecimal("70.0")) < 0) {
                 throw new GeneralBusinessException("模型准确率过低，不满足部署要求");
             }
 
-            // 停用其他同类型的已部署模型
             LambdaQueryWrapper<MLModel> wrapper = new LambdaQueryWrapper<MLModel>()
                     .eq(MLModel::getModelType, model.getModelType())
                     .eq(MLModel::getModelStatus, "deployed")
-                    .ne(MLModel::getId, modelId); // 【修正】使用 getId()
+                    .ne(MLModel::getId, modelId);
 
             List<MLModel> deployedModels = this.list(wrapper);
             for (MLModel deployedModel : deployedModels) {
                 deployedModel.setModelStatus("disabled");
-                // updateTime 会自动更新
                 this.updateById(deployedModel);
             }
 
-            // 部署当前模型
             model.setModelStatus("deployed");
             model.setDeployedAt(LocalDateTime.now());
             this.updateById(model);
@@ -223,7 +209,7 @@ public class MLModelServiceImpl extends ServiceImpl<MLModelMapper, MLModel> impl
         LambdaQueryWrapper<MLModel> wrapper = new LambdaQueryWrapper<MLModel>()
                 .eq(modelType != null, MLModel::getModelType, modelType)
                 .in(MLModel::getModelStatus, Arrays.asList("completed", "deployed"))
-                .orderByDesc(MLModel::getCreateTime); // 【修正】使用 getCreateTime
+                .orderByDesc(MLModel::getCreateTime);
 
         List<MLModel> models = this.list(wrapper);
 
@@ -232,37 +218,27 @@ public class MLModelServiceImpl extends ServiceImpl<MLModelMapper, MLModel> impl
                 .collect(Collectors.toList());
     }
 
-    // --- 私有辅助方法 ---
-
-    // 【修正】此方法已不再需要，校验由DTO注解完成
-    // private void validateTrainDTO(MLModelTrainDTO trainDTO) { ... }
-
     private void startAsyncTraining(MLModel model) {
-        log.info("启动异步训练任务，模型ID：{}", model.getId()); // 【修正】使用 getId()
+        log.info("启动异步训练任务，模型ID：{}", model.getId());
 
-        // 模拟训练完成后更新状态
         new Thread(() -> {
             try {
-                Thread.sleep(5000); // 模拟训练时间
+                Thread.sleep(5000);
 
-                // 更新模型状态和性能指标
                 model.setModelStatus("completed");
                 model.setAccuracyScore(new BigDecimal("85.6"));
                 model.setPrecisionScore(new BigDecimal("84.2"));
                 model.setRecallScore(new BigDecimal("87.1"));
                 model.setF1Score(new BigDecimal("85.6"));
-                // updateTime 会自动更新
 
                 this.updateById(model);
-                log.info("模型训练完成，模型ID：{}", model.getId()); // 【修正】使用 getId()
+                log.info("模型训练完成，模型ID：{}", model.getId());
 
             } catch (Exception e) {
-                log.error("模型训练失败，模型ID：{}", model.getId(), e); // 【修正】使用 getId()
+                log.error("模型训练失败，模型ID：{}", model.getId(), e);
             }
         }).start();
     }
-
-    // ... 其他私有方法保持不变 ...
 
     private void validateInputData(String modelType, Map<String, Object> inputData) {
         switch (modelType) {
@@ -377,7 +353,7 @@ public class MLModelServiceImpl extends ServiceImpl<MLModelMapper, MLModel> impl
                 .build();
 
         return MLModelVO.builder()
-                .modelId(model.getId()) // 【修正】使用 getId()
+                .modelId(model.getId())
                 .modelName(model.getModelName())
                 .modelType(model.getModelType())
                 .modelVersion(model.getModelVersion())
@@ -386,7 +362,7 @@ public class MLModelServiceImpl extends ServiceImpl<MLModelMapper, MLModel> impl
                 .performance(performance)
                 .modelStatus(model.getModelStatus())
                 .deployedAt(model.getDeployedAt())
-                .createTime(model.getCreateTime()) // 【修正】使用 getCreateTime()
+                .createTime(model.getCreateTime())
                 .build();
     }
 }

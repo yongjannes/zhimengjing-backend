@@ -38,7 +38,7 @@ public class AdminAuthController {
      * @param request  HttpServletRequest对象，用于获取客户端IP和User-Agent
      * @return 登录结果，包括JWT令牌
      */
-    @PostMapping("/login")
+    @PostMapping(value = "/login", consumes = {org.springframework.http.MediaType.APPLICATION_JSON_VALUE, org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE})
     @Operation(summary = "管理员登录")
     @RepeatSubmit(message = "登录请求过于频繁，请稍后再试！")
     @Log(module = "后台认证", operation = "管理员登录")
@@ -81,7 +81,7 @@ public class AdminAuthController {
      * @param passwordDTO 包含旧密码、新密码和确认新密码
      * @return 修改成功提示
      */
-    @PutMapping("/changePassword")
+    @PutMapping(value = "/changePassword", consumes = {org.springframework.http.MediaType.APPLICATION_JSON_VALUE, org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE})
     @Operation(summary = "修改密码")
     @Log(module = "后台认证", operation = "管理员修改密码")
     public Result<String> changePassword(@Valid @RequestBody AdminChangePasswordDTO passwordDTO) {

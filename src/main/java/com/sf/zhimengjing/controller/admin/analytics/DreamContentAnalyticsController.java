@@ -38,7 +38,7 @@ public class DreamContentAnalyticsController {
 
     private final DreamContentAnalyticsService dreamContentAnalyticsService;
 
-    @PostMapping("/analyze/{dreamId}")
+    @PostMapping(value = "/analyze/{dreamId}", consumes = {org.springframework.http.MediaType.APPLICATION_JSON_VALUE, org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE})
     @Operation(summary = "1. 分析梦境内容", description = "对指定梦境进行深度内容分析，包括情感分析、关键词提取、分类等")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public DreamContentAnalysisVO analyzeDreamContent(
@@ -81,7 +81,7 @@ public class DreamContentAnalyticsController {
         return result;
     }
 
-    @PostMapping("/extract-keywords/{dreamId}")
+    @PostMapping(value = "/extract-keywords/{dreamId}", consumes = {org.springframework.http.MediaType.APPLICATION_JSON_VALUE, org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE})
     @Operation(summary = "3. 提取梦境关键词", description = "从梦境内容中提取关键词")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public List<String> extractKeywords(
