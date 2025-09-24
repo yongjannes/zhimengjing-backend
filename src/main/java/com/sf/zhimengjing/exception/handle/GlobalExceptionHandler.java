@@ -3,6 +3,8 @@ package com.sf.zhimengjing.exception.handle;
 import com.sf.zhimengjing.common.enumerate.ResultEnum;
 import com.sf.zhimengjing.common.exception.*;
 import com.sf.zhimengjing.common.result.Result;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
@@ -103,5 +105,19 @@ public class GlobalExceptionHandler {
             log.error(ex.getMessage());
             return Result.error("请求参数验证失败");
         }
+    }
+
+    /**
+     * 捕获 @Validated 类级别校验异常 (ConstraintViolationException)
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<String> handleConstraintViolationException(ConstraintViolationException e) { // 更正: Void -> String
+        String message = e.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .findFirst()
+                .orElse("参数校验失败");
+        log.warn("参数校验失败: {}", message);
+        return Result.error(message);
     }
 }

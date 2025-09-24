@@ -1,9 +1,13 @@
 package com.sf.zhimengjing.entity.analytics;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sf.zhimengjing.entity.BaseEntity;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
 import java.time.LocalDateTime;
 
 /**
@@ -19,12 +23,16 @@ public class UserBehavior extends BaseEntity {
 
 
     /** 用户ID */
+    @NotNull(message = "用户ID不能为空")
     private Long userId;
 
     /** 行为类型（如：PAGE_VIEW-页面浏览，DREAM_SUBMIT-提交梦境，LOGIN-登录等） */
+    @NotNull(message = "行为类型不能为空")
     private String behaviorType;
 
     /** 行为发生时间 */
+    @NotNull(message = "行为发生时间不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime behaviorTime;
 
     /** 会话ID */

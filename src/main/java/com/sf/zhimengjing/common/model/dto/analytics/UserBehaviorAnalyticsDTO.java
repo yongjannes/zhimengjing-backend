@@ -1,12 +1,13 @@
 package com.sf.zhimengjing.common.model.dto.analytics;
 
+import com.sf.zhimengjing.common.model.BasePageDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
 @Schema(description="用户行为分析DTO")
-public class UserBehaviorAnalyticsDTO {
+public class UserBehaviorAnalyticsDTO extends BasePageDTO {
     @Schema(description = "用户ID")
     private Long userId;
 
@@ -24,4 +25,6 @@ public class UserBehaviorAnalyticsDTO {
 
     @Schema(description = "操作系统类型")
     private String osType;
+
+
 }
