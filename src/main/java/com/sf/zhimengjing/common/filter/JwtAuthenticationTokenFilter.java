@@ -74,7 +74,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 String subject = claims.getSubject();
                 if ("admin".equals(subject)) {
-                    handleAdminAuthentication(claims);
+                    handleAdminAuthentication(token, claims, response);
                 } else {
                     handleUserAuthentication(token,claims, response);
                 }
@@ -90,7 +90,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     /**
      * 处理后台管理员认证
      */
-    private void handleAdminAuthentication(Claims claims) {
+    private void handleAdminAuthentication(String token,Claims claims, HttpServletResponse response) {
         Long adminId = claims.get("adminId", Long.class);
         if (adminId != null) {
             if (Boolean.FALSE.equals(redisTemplate.hasKey(SystemConstants.REDIS_ADMIN_USER_KEY + adminId))) {
@@ -103,6 +103,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(adminId, null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 log.info("[JWT Filter] 管理员认证成功: id={}, username={}", adminUser.getId(), adminUser.getUsername());
+                tryToRefreshToken(token, claims, response);
             } else {
                 log.warn("[JWT Filter] 管理员不存在或被禁用: id={}", adminId);
             }
