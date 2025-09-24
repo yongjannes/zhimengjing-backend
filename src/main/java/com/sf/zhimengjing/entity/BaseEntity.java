@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 public class BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id; // 主键
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
