@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sf.zhimengjing.common.model.dto.ai.AIModelDTO;
 import com.sf.zhimengjing.common.result.Result;
+import com.sf.zhimengjing.common.util.SecurityUtils;
 import com.sf.zhimengjing.service.admin.AIModelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -59,7 +60,7 @@ public class AIModelController {
     public Result<Boolean> createModel(
             @Parameter(description = "AI模型创建请求数据") @Validated @RequestBody AIModelDTO.ModelRequestDTO requestDTO) {
 
-        Long operatorId = getCurrentUserId();
+        Long operatorId = SecurityUtils.getUserId();
         return Result.success(aiModelService.createModel(requestDTO, operatorId));
     }
 
@@ -71,7 +72,7 @@ public class AIModelController {
             @Parameter(description = "模型编码") @PathVariable String modelCode,
             @Parameter(description = "AI模型更新请求数据") @Validated @RequestBody AIModelDTO.ModelRequestDTO requestDTO) {
 
-        Long operatorId = getCurrentUserId();
+        Long operatorId = SecurityUtils.getUserId();
         return Result.success(aiModelService.updateModel(modelCode, requestDTO, operatorId));
     }
 
@@ -82,7 +83,7 @@ public class AIModelController {
     public Result<Boolean> deleteModel(
             @Parameter(description = "模型编码") @PathVariable String modelCode) {
 
-        Long operatorId = getCurrentUserId();
+        Long operatorId = SecurityUtils.getUserId();
         return Result.success(aiModelService.deleteModel(modelCode, operatorId));
     }
 
@@ -93,7 +94,7 @@ public class AIModelController {
     public Result<Boolean> switchDefaultModel(
             @Parameter(description = "模型编码") @PathVariable String modelCode) {
 
-        Long operatorId = getCurrentUserId();
+        Long operatorId = SecurityUtils.getUserId();
         return Result.success(aiModelService.switchDefaultModel(modelCode, operatorId));
     }
 
@@ -105,7 +106,7 @@ public class AIModelController {
             @Parameter(description = "模型编码") @PathVariable String modelCode,
             @Parameter(description = "是否可用") @RequestParam Boolean isAvailable) {
 
-        Long operatorId = getCurrentUserId();
+        Long operatorId = SecurityUtils.getUserId();
         return Result.success(aiModelService.toggleModelStatus(modelCode, isAvailable, operatorId));
     }
 
@@ -136,11 +137,5 @@ public class AIModelController {
     @PreAuthorize("hasAnyRole('ADMIN')")
     public Result<List<String>> getAllProviders() {
         return Result.success(aiModelService.getAllProviders());
-    }
-
-    /** 获取当前登录用户ID (模拟) */
-    private Long getCurrentUserId() {
-        // 实际项目中可通过 SecurityContextHolder 获取登录用户ID
-        return 501L;
     }
 }
