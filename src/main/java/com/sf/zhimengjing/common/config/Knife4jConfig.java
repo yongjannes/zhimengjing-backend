@@ -71,7 +71,7 @@ public class Knife4jConfig {
                         "/community/**",
                         "/reminder/**",
                         "/vip/**",
-                        "/api/vip/**"
+                        "/api/**"
                 )
                 // 排除已经分到公共组的接口
                 .pathsToExclude("/user/login")

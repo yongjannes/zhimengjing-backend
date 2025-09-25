@@ -26,6 +26,9 @@ public class AIModel extends BaseEntity {
     /** AI模型名称 */
     private String modelName;
 
+    /** API密钥 */
+    private String apiKey;
+
     /** 提供商（如：DeepSeek、ZhipuAI、AliBaiLian） */
     private String provider;
 

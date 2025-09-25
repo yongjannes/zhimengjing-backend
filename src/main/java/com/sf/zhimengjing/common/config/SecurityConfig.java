@@ -7,6 +7,7 @@ import com.sf.zhimengjing.common.result.Result;
 import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -50,6 +51,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 配置请求权限
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // 将 Knife4j/Swagger UI 的相关资源路径也设置为公开访问
                         .requestMatchers(
                                 "/user/login",
@@ -61,7 +63,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/webjars/**",
                                 "/swagger-resources/**",
-                                "/admin/auth/login"
+                                "/admin/auth/login",
+                                "/api/dream-analysis/analyze/stream"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

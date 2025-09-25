@@ -2,6 +2,16 @@ server:
   port: 8888
 
 spring:
+  ai:
+    # 关闭模型的自动配置，我们将手动管理
+    model:
+      chat: none
+      image: none
+      moderation: none
+      audio:
+        speech: none
+        transcription: none
+      embedding: none
   datasource:
     url: jdbc:mysql://localhost:3306/zhimengjing_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
     username: root
@@ -24,3 +34,8 @@ knife4j:
     enable: true
     username: admin
     password: 123456
+
+logging:
+  level:
+    org.springframework.ai: TRACE # AI对话的日志级别
+    com.sf.zhimengjing: debug # 本项目的日志级别
