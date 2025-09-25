@@ -1,10 +1,12 @@
 package com.sf.zhimengjing.entity.admin;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.sf.zhimengjing.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
 import java.math.BigDecimal;
 
 /**
@@ -37,6 +39,7 @@ public class AIModel extends BaseEntity {
     private Integer maxTokens;
 
     /** 每千令牌成本 */
+    @TableField("cost_per_1k_tokens")
     private BigDecimal costPer1kTokens;
 
     /** 温度参数（控制输出的随机性） */
