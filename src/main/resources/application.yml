@@ -42,3 +42,9 @@ jwt:
   expiration: 7200000          # 2小时
   refresh-threshold: 1800000   # 30分钟
 
+
+# Jasypt 加密配置
+jasypt:
+  encryptor:
+    password: yongjannes   # !!! 请务必替换为一个复杂、随机的强密码 !!!
+    algorithm: PBEWithMD5AndDES # 可以选择加密算法，这是默认值

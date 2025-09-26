@@ -1,10 +1,12 @@
 package com.sf.zhimengjing.common.config;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.sf.zhimengjing.common.exception.GeneralBusinessException;
 import com.sf.zhimengjing.entity.admin.AIModel;
 import com.sf.zhimengjing.service.admin.AIModelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jasypt.encryption.StringEncryptor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.ai.deepseek.DeepSeekChatOptions;
@@ -12,10 +14,11 @@ import org.springframework.ai.deepseek.api.DeepSeekApi;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.zhipuai.ZhiPuAiChatModel;
 import org.springframework.ai.zhipuai.ZhiPuAiChatOptions;
 import org.springframework.ai.zhipuai.api.ZhiPuAiApi;
-import org.springframework.ai.zhipuai.ZhiPuAiChatModel;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +36,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AiModelFactory {
 
     private final AIModelService aiModelService;
+    private final StringEncryptor stringEncryptor;
+
     private final Map<String, ChatModel> modelCache = new ConcurrentHashMap<>();
 
     /**
@@ -58,12 +63,18 @@ public class AiModelFactory {
 
         if (model == null) {
             log.error("未在数据库中找到模型配置：{}", modelCode);
-            throw new IllegalArgumentException("未在数据库中找到模型配置：" + modelCode);
+            throw new GeneralBusinessException("未在数据库中找到模型配置：" + modelCode);
         }
 
         if (Boolean.FALSE.equals(model.getIsAvailable())) {
             log.warn("模型当前不可用：{}", modelCode);
-            throw new IllegalStateException("模型当前不可用：" + modelCode);
+            throw new GeneralBusinessException("模型当前不可用：" + modelCode);
+        }
+
+        // --- 新增校验 --- 确保apiKey不为空
+        if (!StringUtils.hasText(model.getApiKey())) {
+            log.error("模型 [{}] 的 API Key 未配置", modelCode);
+            throw new GeneralBusinessException("模型API Key未配置：" + modelCode);
         }
 
         log.info("正在构建AI模型，modelCode={}, provider={}", modelCode, model.getProvider());
@@ -76,15 +87,18 @@ public class AiModelFactory {
             case "Kimi" -> buildKimiChatModel(model);
             default -> {
                 log.error("不支持的AI提供商：{}", model.getProvider());
-                throw new IllegalArgumentException("不支持的AI提供商：" + model.getProvider());
+                throw new GeneralBusinessException("不支持的AI提供商：" + model.getProvider());
             }
         };
     }
 
     private ChatModel buildDeepSeekChatModel(AIModel model) {
         log.info("构建DeepSeek聊天模型，modelName={}", model.getModelName());
+        String decryptedApiKey = stringEncryptor.decrypt(model.getApiKey());
+        log.info("成功解密模型 [{}] 的 API Key", model.getModelCode());
+
         DeepSeekApi deepSeekApi = DeepSeekApi.builder()
-                .apiKey(Objects.requireNonNull(model.getApiKey(), "DeepSeek API Key 不能为空"))
+                .apiKey(Objects.requireNonNull(decryptedApiKey, "DeepSeek API Key 不能为空"))
                 .build();
 
         DeepSeekChatOptions options = DeepSeekChatOptions.builder()
@@ -101,7 +115,9 @@ public class AiModelFactory {
 
     private ChatModel buildZhipuChatModel(AIModel model) {
         log.info("构建ZhipuAI聊天模型，modelName={}", model.getModelName());
-        ZhiPuAiApi zhipu = new ZhiPuAiApi(Objects.requireNonNull(model.getApiKey(), "ZhiPu API Key 不能为空"));
+        String decryptedApiKey = stringEncryptor.decrypt(model.getApiKey());
+        log.info("成功解密模型 [{}] 的 API Key", model.getModelCode());
+        ZhiPuAiApi zhipu = new ZhiPuAiApi(Objects.requireNonNull(decryptedApiKey, "ZhiPu API Key 不能为空"));
 
 
 
@@ -117,8 +133,10 @@ public class AiModelFactory {
 
     private ChatModel buildAliBaiLianChatModel(AIModel model) {
         log.info("构建AliBaiLian聊天模型，modelName={}", model.getModelName());
+        String decryptedApiKey = stringEncryptor.decrypt(model.getApiKey());
+        log.info("成功解密模型 [{}] 的 API Key", model.getModelCode());
         OpenAiApi openAiApi = OpenAiApi.builder()
-                .apiKey(Objects.requireNonNull(model.getApiKey(), "AliBaiLian API Key 不能为空"))
+                .apiKey(Objects.requireNonNull(decryptedApiKey, "AliBaiLian API Key 不能为空"))
                 .baseUrl(Objects.requireNonNull(model.getApiEndpoint(), "AliBaiLian Base URL 不能为空"))
                 .build();
 
@@ -136,8 +154,10 @@ public class AiModelFactory {
 
     private ChatModel buildKimiChatModel(AIModel model) {
         log.info("构建Kimi聊天模型，modelName={}", model.getModelName());
+        String decryptedApiKey = stringEncryptor.decrypt(model.getApiKey());
+        log.info("成功解密模型 [{}] 的 API Key", model.getModelCode());
         OpenAiApi openAiApi = OpenAiApi.builder()
-                .apiKey(Objects.requireNonNull(model.getApiKey(), "Kimi API Key 不能为空"))
+                .apiKey(Objects.requireNonNull(decryptedApiKey, "Kimi API Key 不能为空"))
                 .baseUrl(Objects.requireNonNull(model.getApiEndpoint(), "Kimi Base URL 不能为空"))
                 .build();
 

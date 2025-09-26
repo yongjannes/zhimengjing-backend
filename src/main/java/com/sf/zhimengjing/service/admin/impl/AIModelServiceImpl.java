@@ -13,6 +13,7 @@ import com.sf.zhimengjing.mapper.admin.AIModelMapper;
 import com.sf.zhimengjing.mapper.admin.AIUsageStatisticsMapper;
 import com.sf.zhimengjing.service.admin.AIModelService;
 import lombok.RequiredArgsConstructor;
+import org.jasypt.encryption.StringEncryptor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 public class AIModelServiceImpl extends ServiceImpl<AIModelMapper, AIModel> implements AIModelService {
 
     private final AIUsageStatisticsMapper usageStatisticsMapper;
+    private final StringEncryptor stringEncryptor;
+
 
     @Override
     public IPage<AIModelDTO> getAvailableModels(Page<AIModelDTO> page, String provider) {
@@ -70,6 +73,11 @@ public class AIModelServiceImpl extends ServiceImpl<AIModelMapper, AIModel> impl
         // 创建AI模型
         AIModel model = new AIModel();
         BeanUtils.copyProperties(requestDTO, model);
+
+        if (StringUtils.hasText(requestDTO.getApiKey())) {
+            model.setApiKey(stringEncryptor.encrypt(requestDTO.getApiKey()));
+        }
+
         model.setIsAvailable(true);
         model.setIsDefault(false);
 
@@ -86,6 +94,10 @@ public class AIModelServiceImpl extends ServiceImpl<AIModelMapper, AIModel> impl
 
         // 更新模型信息
         BeanUtils.copyProperties(requestDTO, model);
+        if (StringUtils.hasText(requestDTO.getApiKey())) {
+            model.setApiKey(stringEncryptor.encrypt(requestDTO.getApiKey()));
+        }
+
         return this.updateById(model);
     }
 
@@ -216,5 +228,18 @@ public class AIModelServiceImpl extends ServiceImpl<AIModelMapper, AIModel> impl
         AIModelDTO dto = new AIModelDTO();
         BeanUtils.copyProperties(entity, dto);
         return dto;
+    }
+
+
+    /**
+     * 在真正需要调用AI服务时，需要先解密apiKey
+     * 示例方法 (此方法仅为演示，实际应在AI调用处实现)
+     */
+    public String getDecryptedApiKey(String modelCode) {
+        AIModel aiModel = this.lambdaQuery().eq(AIModel::getModelCode, modelCode).one();
+        if (aiModel != null && StringUtils.hasText(aiModel.getApiKey())) {
+            return stringEncryptor.decrypt(aiModel.getApiKey());
+        }
+        return null;
     }
 }

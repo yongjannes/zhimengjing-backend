@@ -111,8 +111,9 @@ public class DreamAnalysisServiceImpl implements DreamAnalysisService {
         } catch (Exception e) {
             log.error("梦境解析失败 - modelCode: {}, dreamContent: {}", modelCode, dreamContent, e);
             logEntity.setStatus("FAILED");
+            String errorMessage = "AI服务调用失败：" + e.getMessage();
             logEntity.setErrorMsg(e.getMessage());
-            throw e;
+            throw new GeneralBusinessException(errorMessage);
         } finally {
             logEntity.setResponseTime((int) (System.currentTimeMillis() - startTime));
             aiApiLogMapper.insert(logEntity);

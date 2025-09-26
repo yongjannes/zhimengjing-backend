@@ -92,6 +92,10 @@ public class AIModelDTO implements Serializable {
 
         @Schema(description = "模型描述")
         private String description;
+
+        @Schema(description = "API密钥", required = true)
+        @NotBlank(message = "API密钥不能为空")
+        private String apiKey;
     }
 
     /**
