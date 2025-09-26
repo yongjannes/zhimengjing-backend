@@ -1,7 +1,9 @@
 package com.sf.zhimengjing.service.admin.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.sf.zhimengjing.common.config.AiChatConfiguration;
 import com.sf.zhimengjing.common.config.AiModelFactory;
+import com.sf.zhimengjing.common.config.RedisChatMemoryRepository;
 import com.sf.zhimengjing.common.exception.GeneralBusinessException;
 import com.sf.zhimengjing.common.model.dto.ai.AIDreamConfigDTO;
 import com.sf.zhimengjing.common.util.SecurityUtils;
@@ -14,7 +16,6 @@ import com.sf.zhimengjing.service.admin.DreamAnalysisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -42,11 +43,14 @@ public class DreamAnalysisServiceImpl implements DreamAnalysisService {
     private final AIDreamConfigService dreamConfigService;
     private final AIApiLogMapper aiApiLogMapper;
     private final AIModelService aiModelService;
+    private final RedisChatMemoryRepository redisChatMemoryRepository;
+    private final AiChatConfiguration.ChatClientFactory chatClientFactory;
 
     private static final BigDecimal CHAR_TO_TOKEN_RATIO = new BigDecimal("1.8");
 
     @Override
-    public String analyzeDream(String modelCode, String dreamContent) {
+    public String analyzeDream(String modelCode, String dreamContent,String fullConversationId) {
+
         if (!StringUtils.hasText(modelCode)) {
             modelCode = getDefaultModelCode();
         }
@@ -72,23 +76,21 @@ public class DreamAnalysisServiceImpl implements DreamAnalysisService {
             logEntity.setApiEndpoint("DREAM_ANALYSIS");
 
             // 构建聊天客户端
-            ChatClient chatClient = buildChatClient(chatModel, config);
+
+            ChatClient chatClient = buildChatClient(modelCode, chatModel, config);
             log.debug("构建 ChatClient 成功");
 
-            // 执行解析
-//            String result = chatClient.prompt()
-//                    .user(dreamContent)
-//                    .call()
-//                    .content();
 
             ChatResponse response = chatClient.prompt()
                     .user(dreamContent)
+                    .advisors(a -> a.param("chat_memory_conversation_id", fullConversationId))
                     .call()
                     .chatResponse();
 
             String result = response.getResult().getOutput().getText();
             log.info("梦境解析成功，结果: {}", result);
             logEntity.setResponseContent(result);
+
 
             Usage usage = response.getMetadata().getUsage();
             if (usage != null) {
@@ -122,7 +124,7 @@ public class DreamAnalysisServiceImpl implements DreamAnalysisService {
     }
 
     @Override
-    public Flux<String> analyzeDreamStream(String modelCode, String dreamContent) {
+    public Flux<String> analyzeDreamStream(String modelCode, String dreamContent, String fullConversationId)  {
         String finalModelCode;
         if (!StringUtils.hasText(modelCode)) {
             finalModelCode  = getDefaultModelCode();
@@ -134,7 +136,7 @@ public class DreamAnalysisServiceImpl implements DreamAnalysisService {
 
         AIApiLog logEntity = new AIApiLog();
         logEntity.setRequestId(UUID.randomUUID().toString());
-        logEntity.setModelCode(modelCode);
+        logEntity.setModelCode(finalModelCode);
         logEntity.setUserId(SecurityUtils.getUserId());
         logEntity.setRequestContent(dreamContent);
         logEntity.setCreateTime(LocalDateTime.now());
@@ -142,13 +144,14 @@ public class DreamAnalysisServiceImpl implements DreamAnalysisService {
         StringBuilder responseContent = new StringBuilder();
 
         try {
-            ChatModel chatModel = aiModelFactory.getChatModel(modelCode);
-            AIDreamConfigDTO config = dreamConfigService.getDreamConfigByModel(modelCode);
+            ChatModel chatModel = aiModelFactory.getChatModel(finalModelCode);
+            AIDreamConfigDTO config = dreamConfigService.getDreamConfigByModel(finalModelCode);
             logEntity.setApiEndpoint("DREAM_ANALYSIS_STREAM");
-            ChatClient chatClient = buildChatClient(chatModel, config);
+            ChatClient chatClient = buildChatClient(finalModelCode, chatModel, config);
 
             return chatClient.prompt()
                     .user(dreamContent)
+                    .advisors(a -> a.param("chat_memory_conversation_id", fullConversationId))
                     .stream()
                     .content() // 我们仍然从content()开始，因为它最简单
                     .doOnNext(responseContent::append) // 拼接所有返回的文本
@@ -209,14 +212,13 @@ public class DreamAnalysisServiceImpl implements DreamAnalysisService {
     /**
      * 构建聊天客户端
      */
-    private ChatClient buildChatClient(ChatModel chatModel, AIDreamConfigDTO config) {
-        log.debug("构建 ChatClient，使用自定义系统提示: {}", config.getCustomPrompt());
+    private ChatClient buildChatClient(String modelCode, ChatModel chatModel, AIDreamConfigDTO config) {
+        log.debug("获取 ChatClient，modelCode={}, 使用自定义系统提示: {}", modelCode, config.getCustomPrompt());
+
         try {
-            ChatClient client = ChatClient.builder(chatModel)
-                    .defaultSystem(config.getCustomPrompt())
-                    .defaultAdvisors(new SimpleLoggerAdvisor())
-                    .build();
-            log.debug("ChatClient 构建完成");
+            // 使用工厂获取带有统一记忆管理的ChatClient
+            ChatClient client = chatClientFactory.getChatClient(modelCode, chatModel, config.getCustomPrompt());
+            log.debug("ChatClient 获取完成，已启用统一记忆管理");
             return client;
         } catch (Exception e) {
             log.error("构建 ChatClient 失败", e);
@@ -236,4 +238,5 @@ public class DreamAnalysisServiceImpl implements DreamAnalysisService {
         log.info("前端未指定模型，自动使用默认模型: {}", defaultModel.getModelCode());
         return defaultModel.getModelCode();
     }
+
 }

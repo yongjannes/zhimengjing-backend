@@ -17,7 +17,7 @@ public interface DreamAnalysisService {
      * @param dreamContent 梦境内容
      * @return 解析后的字符串结果
      */
-    String analyzeDream(String modelCode, String dreamContent);
+    String analyzeDream(String modelCode, String dreamContent,String fullConversationId);
 
     /**
      * 流式梦境解析
@@ -26,5 +26,5 @@ public interface DreamAnalysisService {
      * @param dreamContent 梦境内容
      * @return 包含解析结果的响应流
      */
-    Flux<String> analyzeDreamStream(String modelCode, String dreamContent);
+    public Flux<String> analyzeDreamStream(String modelCode, String dreamContent, String fullConversationId) ;
 }

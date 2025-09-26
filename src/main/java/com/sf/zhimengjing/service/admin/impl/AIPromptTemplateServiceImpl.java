@@ -167,6 +167,40 @@ public class AIPromptTemplateServiceImpl extends ServiceImpl<AIPromptTemplateMap
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public String getTemplateContentByModelAndType(String modelCode, String templateType) {
+        log.info("根据模型编码和模板类型查找提示词模板：modelCode={}, templateType={}", modelCode, templateType);
+
+        // 优先查找特定模型的模板
+        AIPromptTemplate specificTemplate = this.getOne(new LambdaQueryWrapper<AIPromptTemplate>()
+                .eq(AIPromptTemplate::getModelCode, modelCode)
+                .eq(AIPromptTemplate::getTemplateType, templateType)
+                .eq(AIPromptTemplate::getIsActive, true)
+                .orderByDesc(AIPromptTemplate::getVersion)
+                .last("limit 1"));
+
+        if (specificTemplate != null) {
+            log.info("找到特定模型的模板：templateCode={}", specificTemplate.getTemplateCode());
+            return specificTemplate.getTemplateContent();
+        }
+
+        // 如果没有找到特定模型的模板，查找通用模板（modelCode为null）
+        AIPromptTemplate generalTemplate = this.getOne(new LambdaQueryWrapper<AIPromptTemplate>()
+                .isNull(AIPromptTemplate::getModelCode)
+                .eq(AIPromptTemplate::getTemplateType, templateType)
+                .eq(AIPromptTemplate::getIsActive, true)
+                .orderByDesc(AIPromptTemplate::getVersion)
+                .last("limit 1"));
+
+        if (generalTemplate != null) {
+            log.info("找到通用模板：templateCode={}", generalTemplate.getTemplateCode());
+            return generalTemplate.getTemplateContent();
+        }
+
+        log.warn("未找到模型 {} 类型为 {} 的提示词模板", modelCode, templateType);
+        return null;
+    }
+
     /**
      * 渲染模板内容
      * 支持 {{variable}} 格式的变量替换

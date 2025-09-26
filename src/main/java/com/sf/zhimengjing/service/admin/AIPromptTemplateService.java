@@ -43,4 +43,9 @@ public interface AIPromptTemplateService extends IService<AIPromptTemplate> {
 
     /** 获取所有模板类型 */
     List<String> getAllTemplateTypes();
+
+    /** 根据模型编码和模板类型获取提示词模板内容 */
+    String getTemplateContentByModelAndType(String modelCode, String templateType);
+
+
 }

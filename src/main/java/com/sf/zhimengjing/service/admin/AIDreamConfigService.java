@@ -34,4 +34,5 @@ public interface AIDreamConfigService extends IService<AIDreamConfig> {
 
     /** 获取默认配置 */
     AIDreamConfigDTO getDefaultConfig();
+
 }

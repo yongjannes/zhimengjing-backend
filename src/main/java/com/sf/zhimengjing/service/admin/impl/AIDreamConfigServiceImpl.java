@@ -7,9 +7,12 @@ import com.sf.zhimengjing.common.model.dto.ai.AIDreamConfigDTO;
 import com.sf.zhimengjing.entity.admin.AIDreamConfig;
 import com.sf.zhimengjing.entity.admin.AIModel;
 import com.sf.zhimengjing.mapper.admin.AIDreamConfigMapper;
+import com.sf.zhimengjing.mapper.admin.AIPromptTemplateMapper;
 import com.sf.zhimengjing.service.admin.AIDreamConfigService;
 import com.sf.zhimengjing.service.admin.AIModelService;
+import com.sf.zhimengjing.service.admin.AIPromptTemplateService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +27,14 @@ import java.util.stream.Collectors;
  * @Package: com.sf.zhimengjing.service.admin.impl
  * @Description: AI梦境解析配置服务实现类，提供梦境解析配置相关业务逻辑
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AIDreamConfigServiceImpl extends ServiceImpl<AIDreamConfigMapper, AIDreamConfig> implements AIDreamConfigService {
 
     private final AIModelService aiModelService;
+    private final AIPromptTemplateMapper promptTemplateMapper;
+    private final AIPromptTemplateService aiPromptTemplateService;
 
     @Override
     public List<AIDreamConfigDTO> getAllDreamConfigs() {
@@ -140,12 +146,38 @@ public class AIDreamConfigServiceImpl extends ServiceImpl<AIDreamConfigMapper, A
         dto.setEnableEmotionAnalysis(true);
         dto.setEnableTagGeneration(true);
         dto.setEnableSuggestion(true);
-        dto.setCustomPrompt("你是一位专业的梦境解析师，具有深厚的心理学背景...");
+        dto.setCustomPrompt("");
 
+        // 根据默认解析模式获取对应的模板类型
+        String targetTemplateType = getTemplateTypeByAnalysisMode("comprehensive");
+        String templateContent = null;
+
+        // 尝试获取对应解析模式的通用模板
+        if (StringUtils.hasText(targetTemplateType)) {
+            templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                    null, targetTemplateType);  // modelCode为null表示通用模板
+        }
+
+        // 如果没有找到，回退到默认模板类型
+        if (!StringUtils.hasText(templateContent)) {
+            String[] fallbackTypes = {"system_prompt", "dream_analysis", "ai_system", "default_prompt"};
+            for (String fallbackType : fallbackTypes) {
+                templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                        null, fallbackType);
+                if (StringUtils.hasText(templateContent)) {
+                    break;
+                }
+            }
+        }
+
+        dto.setCustomPrompt(StringUtils.hasText(templateContent) ? templateContent : "");
         return dto;
     }
 
-    /** 为指定模型创建默认配置 */
+
+    /**
+     * 为指定模型创建默认配置
+     */
     private AIDreamConfigDTO createDefaultConfigForModel(String modelCode) {
         AIDreamConfigDTO dto = new AIDreamConfigDTO();
         dto.setModelCode(modelCode);
@@ -158,32 +190,150 @@ public class AIDreamConfigServiceImpl extends ServiceImpl<AIDreamConfigMapper, A
         dto.setEnableSuggestion(true);
         dto.setIsActive(false);
 
-        // 根据不同AI模型设置不同的默认提示词
-        if (StringUtils.hasText(modelCode)) {
-            switch (modelCode) {
-                case "deepseek-chat":
-                    dto.setCustomPrompt("你是一位专业的梦境解析师，擅长从心理学角度进行深入分析，能够从多个维度解读梦境含义...");
+        dto.setCustomPrompt("");
+
+        // 根据默认解析模式获取对应的模板类型
+        String targetTemplateType = getTemplateTypeByAnalysisMode("comprehensive");
+        String templateContent = null;
+        // 先尝试特定模型的模板
+        if (StringUtils.hasText(targetTemplateType)) {
+            templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                    modelCode, targetTemplateType);
+        }
+
+        // 如果没有特定模型的模板，尝试通用模板
+        if (!StringUtils.hasText(templateContent) && StringUtils.hasText(targetTemplateType)) {
+            templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                    null, targetTemplateType);
+        }
+
+        // 如果还是没有，回退到默认模板类型
+        if (!StringUtils.hasText(templateContent)) {
+            String[] fallbackTypes = {"system_prompt", "dream_analysis", "ai_system", "default_prompt"};
+            for (String fallbackType : fallbackTypes) {
+                templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                        modelCode, fallbackType);
+                if (StringUtils.hasText(templateContent)) {
                     break;
-                case "glm-4":
-                    dto.setCustomPrompt("基于心理学理论，对梦境进行专业分析，注重深层心理含义和情感解读...");
+                }
+                templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                        null, fallbackType);
+                if (StringUtils.hasText(templateContent)) {
                     break;
-                case "qwen-turbo":
-                    dto.setCustomPrompt("从象征意义角度解读梦境内容，关注文化和情感层面，提供温暖的分析...");
-                    break;
-                default:
-                    dto.setCustomPrompt("你是一位专业的梦境解析师，具有深厚的心理学背景...");
+                }
             }
         }
+
+        dto.setCustomPrompt(StringUtils.hasText(templateContent) ? templateContent : "");
 
         return dto;
     }
 
-    /** 实体转换 DTO */
+
+    /**
+     * 实体转换 DTO
+     */
     private AIDreamConfigDTO convertToDTO(AIDreamConfig entity) {
         if (entity == null) return null;
 
         AIDreamConfigDTO dto = new AIDreamConfigDTO();
         BeanUtils.copyProperties(entity, dto);
+        // 如果 custom_prompt 为空，从提示词模板系统获取
+        if (!StringUtils.hasText(dto.getCustomPrompt())) {
+            log.info("模型 {} 的 custom_prompt 为空，尝试从模板系统获取", entity.getModelCode());
+
+
+            // 根据解析模式映射到对应的模板类型
+            String targetTemplateType = getTemplateTypeByAnalysisMode(entity.getAnalysisMode());
+            log.info("根据解析模式 {} 映射到模板类型: {}", entity.getAnalysisMode(), targetTemplateType);
+
+            String templateContent = null;
+            String foundTemplateType = null;
+
+            // 首先尝试获取特定解析模式对应的模板类型
+            if (StringUtils.hasText(targetTemplateType)) {
+                // 先尝试特定模型的模板
+                templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                        entity.getModelCode(), targetTemplateType);
+                if (StringUtils.hasText(templateContent)) {
+                    foundTemplateType = targetTemplateType;
+                    log.info("成功从特定模型模板获取到提示词，模型: {}, 类型: {}, 长度: {}",
+                            entity.getModelCode(), targetTemplateType, templateContent.length());
+                } else {
+                    // 如果没有特定模型的模板，尝试通用模板
+                    templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                            null, targetTemplateType);
+                    if (StringUtils.hasText(templateContent)) {
+                        foundTemplateType = targetTemplateType;
+                        log.info("成功从通用模板获取到提示词，模型: {}, 类型: {}, 长度: {}",
+                                entity.getModelCode(), targetTemplateType, templateContent.length());
+                    }
+                }
+            }
+
+            // 如果还没找到，回退到默认的模板类型
+            if (!StringUtils.hasText(templateContent)) {
+                log.warn("未找到解析模式 {} 对应的模板，尝试默认模板类型", entity.getAnalysisMode());
+                String[] fallbackTemplateTypes = {"system_prompt", "dream_analysis", "ai_system", "default_prompt"};
+
+                for (String templateType : fallbackTemplateTypes) {
+                    // 先尝试特定模型的模板
+                    templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                            entity.getModelCode(), templateType);
+                    if (StringUtils.hasText(templateContent)) {
+                        foundTemplateType = templateType;
+                        log.info("成功从特定模型模板获取到提示词，模型: {}, 类型: {}, 长度: {}",
+                                entity.getModelCode(), templateType, templateContent.length());
+                        break;
+                    }
+
+                    templateContent = aiPromptTemplateService.getTemplateContentByModelAndType(
+                            null, templateType);
+
+                    if (StringUtils.hasText(templateContent)) {
+                        foundTemplateType = templateType;
+                        log.info("成功从通用模板获取到提示词，模型: {}, 类型: {}, 长度: {}",
+                                entity.getModelCode(), templateType, templateContent.length());
+                        break;
+                    }
+                }
+            }
+
+            if (StringUtils.hasText(templateContent)) {
+                dto.setCustomPrompt(templateContent);
+                log.info("模型 {} 最终使用模板类型: {}", entity.getModelCode(), foundTemplateType);
+            } else {
+                List<String> availableTypes = aiPromptTemplateService.getAllTemplateTypes();
+                log.warn("未找到模型 {} 解析模式 {} 的任何提示词模板，数据库中可用类型: {}",
+                        entity.getModelCode(), entity.getAnalysisMode(), availableTypes);
+            }
+        } else {
+            log.info("模型 {} 使用数据库中的 custom_prompt，长度: {}", entity.getModelCode(), dto.getCustomPrompt().length());
+        }
+
         return dto;
     }
+
+    /**
+     * 根据解析模式映射到对应的模板类型
+     */
+    private String getTemplateTypeByAnalysisMode(String analysisMode) {
+        if (!StringUtils.hasText(analysisMode)) {
+            return null;
+        }
+
+        return switch (analysisMode.toLowerCase()) {
+            case "comprehensive" -> "dream_analysis_system";
+            case "psychology" -> "emotion_analysis";
+            case "symbolic" -> "tag_generation";
+            case "emotion" -> "emotion_analysis";
+            case "basic" -> "dream_analysis";
+            default -> {
+                log.warn("未知的解析模式: {}, 使用默认模板类型", analysisMode);
+                yield "dream_analysis_system";
+            }
+        };
+    }
+
+
 }

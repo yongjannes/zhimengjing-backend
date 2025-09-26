@@ -17,6 +17,7 @@ import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.zhipuai.ZhiPuAiChatModel;
 import org.springframework.ai.zhipuai.ZhiPuAiChatOptions;
 import org.springframework.ai.zhipuai.api.ZhiPuAiApi;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -32,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Component
+@Configuration
 @RequiredArgsConstructor
 public class AiModelFactory {
 
@@ -39,6 +41,7 @@ public class AiModelFactory {
     private final StringEncryptor stringEncryptor;
 
     private final Map<String, ChatModel> modelCache = new ConcurrentHashMap<>();
+
 
     /**
      * 根据模型编码获取聊天模型实例
@@ -116,6 +119,7 @@ public class AiModelFactory {
     private ChatModel buildZhipuChatModel(AIModel model) {
         log.info("构建ZhipuAI聊天模型，modelName={}", model.getModelName());
         String decryptedApiKey = stringEncryptor.decrypt(model.getApiKey());
+        log.info("API:{}",decryptedApiKey);
         log.info("成功解密模型 [{}] 的 API Key", model.getModelCode());
         ZhiPuAiApi zhipu = new ZhiPuAiApi(Objects.requireNonNull(decryptedApiKey, "ZhiPu API Key 不能为空"));
 
@@ -181,5 +185,22 @@ public class AiModelFactory {
     public void clearModelCache(String modelCode) {
         log.info("清除指定模型缓存，modelCode={}", modelCode);
         modelCache.remove(modelCode);
+    }
+
+    /**
+     * 清除所有缓存（包括ChatClient缓存）
+     * 当模型配置发生变化时调用此方法
+     */
+    public void clearAllCaches() {
+        log.info("清除所有相关缓存");
+        clearCache(); // 清除ChatModel缓存
+
+        // 通过ApplicationContext获取ChatClientFactory并清除其缓存
+        try {
+            // 注意：这里需要注入ApplicationContext或者通过其他方式获取ChatClientFactory
+            log.info("建议手动调用ChatClientFactory.clearAllCache()来清除ChatClient缓存");
+        } catch (Exception e) {
+            log.warn("清除ChatClient缓存时发生异常", e);
+        }
     }
 }
