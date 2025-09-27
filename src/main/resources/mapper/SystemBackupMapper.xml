@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sf.zhimengjing.mapper.admin.SystemBackupMapper">
+
+    <!-- 获取备份统计信息 -->
+    <select id="getBackupStatistics" resultType="java.util.HashMap">
+        SELECT
+            COUNT(*) as totalBackups,
+            SUM(CASE WHEN backup_status = 'SUCCESS' THEN 1 ELSE 0 END) as successBackups,
+            SUM(CASE WHEN backup_status = 'FAILED' THEN 1 ELSE 0 END) as failedBackups,
+            SUM(CASE WHEN backup_status = 'PROCESSING' THEN 1 ELSE 0 END) as processingBackups
+        FROM system_backups
+        WHERE delete_flag = 0
+    </select>
+
+    <!-- 获取磁盘使用统计 -->
+    <select id="getDiskUsageStatistics" resultType="java.util.HashMap">
+        SELECT
+            SUM(backup_size) as totalSize,
+            AVG(backup_size) as avgSize,
+            MAX(backup_size) as maxSize,
+            MIN(backup_size) as minSize
+        FROM system_backups
+        WHERE delete_flag = 0
+          AND backup_status = 'SUCCESS'
+          AND backup_size IS NOT NULL
+    </select>
+
+    <!-- 更新备份状态 -->
+    <update id="updateBackupStatus">
+        UPDATE system_backups
+        SET backup_status = #{status},
+        end_time = NOW(),
+        <if test="errorMessage != null">
+            error_message = #{errorMessage},
+        </if>
+        update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>
