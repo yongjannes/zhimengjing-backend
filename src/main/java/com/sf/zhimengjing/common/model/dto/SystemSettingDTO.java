@@ -2,7 +2,6 @@ package com.sf.zhimengjing.common.model.dto;
 
 import com.sf.zhimengjing.common.model.BasePageDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -18,7 +17,6 @@ import lombok.EqualsAndHashCode;
 public class SystemSettingDTO extends BasePageDTO {
 
     @Schema(description = "配置键名")
-    @NotBlank(message = "配置键名不能为空")
     private String settingKey;
 
     @Schema(description = "配置值")
@@ -39,4 +37,7 @@ public class SystemSettingDTO extends BasePageDTO {
     // 查询条件
     @Schema(description = "关键词搜索")
     private String keyword;
+
+
+
 }
