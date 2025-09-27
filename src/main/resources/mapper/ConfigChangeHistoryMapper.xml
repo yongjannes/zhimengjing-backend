@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sf.zhimengjing.mapper.admin.ConfigChangeHistoryMapper">
+
+    <!-- 根据配置键获取变更历史 -->
+    <select id="getHistoryByConfigKey" resultType="com.sf.zhimengjing.entity.admin.ConfigChangeHistory">
+        SELECT * FROM config_change_history
+        WHERE config_key = #{configKey}
+        AND delete_flag = 0
+        ORDER BY change_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据用户ID获取变更历史 -->
+    <select id="getHistoryByUser" resultType="com.sf.zhimengjing.entity.admin.ConfigChangeHistory">
+        SELECT * FROM config_change_history
+        WHERE changed_by = #{userId}
+        AND delete_flag = 0
+        <if test="startTime != null">
+            AND change_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND change_time &lt;= #{endTime}
+        </if>
+        ORDER BY change_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 清理过期的变更历史记录 -->
+    <update id="cleanExpiredHistory">
+        UPDATE config_change_history
+        SET delete_flag = 1
+        WHERE change_time &lt; #{beforeTime}
+          AND delete_flag = 0
+    </update>
+
+</mapper>
