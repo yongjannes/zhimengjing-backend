@@ -2,9 +2,9 @@ package com.sf.zhimengjing.common.model.dto;
 
 import com.sf.zhimengjing.common.model.BasePageDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
 import java.util.Map;
 
 /**
@@ -19,11 +19,9 @@ import java.util.Map;
 public class ThirdPartyServiceDTO extends BasePageDTO {
 
     @Schema(description = "服务名称")
-    @NotBlank(message = "服务名称不能为空")
     private String serviceName;
 
     @Schema(description = "服务类型")
-    @NotBlank(message = "服务类型不能为空")
     private String serviceType;
 
     @Schema(description = "配置数据")
