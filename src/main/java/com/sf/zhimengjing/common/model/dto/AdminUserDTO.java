@@ -1,5 +1,6 @@
 package com.sf.zhimengjing.common.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -13,7 +14,11 @@ import lombok.Data;
  */
 @Data
 @Schema(description = "后台管理员创建/更新DTO")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AdminUserDTO {
+
+    @Schema(description = "用户ID")
+    private Long id;
 
     @Schema(description = "用户名", required = true)
     @NotEmpty(message = "用户名不能为空")

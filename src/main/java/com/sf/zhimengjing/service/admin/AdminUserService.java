@@ -19,7 +19,7 @@ public interface AdminUserService {
      * @param pageSize 每页记录数
      * @return 分页结果，包含管理员列表和分页信息
      */
-    IPage<AdminUserVO> pageAdminUsers(int pageNum, int pageSize);
+    IPage<AdminUserVO> pageAdminUsers(int pageNum, int pageSize,String username, String realName,Integer status);
 
     /**
      * 创建后台管理员
@@ -45,5 +45,12 @@ public interface AdminUserService {
      * @param operatorId 操作人ID，即执行删除操作的管理员
      */
     void deleteAdminUser(Long id, Long operatorId);
+
+    /**
+     *根据ID获取管理员用户详情
+     * @param id 用户ID
+     * @return 用户详情VO
+     */
+    AdminUserVO getAdminUserById(Long id);
 
 }

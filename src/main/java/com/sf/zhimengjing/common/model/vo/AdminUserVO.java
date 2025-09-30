@@ -1,7 +1,9 @@
 package com.sf.zhimengjing.common.model.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 /**
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 public class AdminUserVO {
 
     @Schema(description = "管理员ID")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long id;
 
     @Schema(description = "用户名")
@@ -33,8 +36,14 @@ public class AdminUserVO {
     private Integer status;
 
     @Schema(description = "最后登录时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastLoginTime;
 
     @Schema(description = "创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
+
+    @Schema(description = "更新时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updateTime;
 }

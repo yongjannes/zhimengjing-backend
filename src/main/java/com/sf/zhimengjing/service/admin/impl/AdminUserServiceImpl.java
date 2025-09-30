@@ -11,6 +11,7 @@ import com.sf.zhimengjing.mapper.admin.AdminUserMapper;
 import com.sf.zhimengjing.service.admin.AdminUserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -35,10 +36,15 @@ public class AdminUserServiceImpl implements AdminUserService {
      * @return IPage<AdminUserVO> 分页结果
      */
     @Override
-    public IPage<AdminUserVO> pageAdminUsers(int pageNum, int pageSize) {
+    public IPage<AdminUserVO> pageAdminUsers(int pageNum, int pageSize, String username, String realName,Integer status) {
         Page<AdminUser> page = new Page<>(pageNum, pageSize);
+
+
         LambdaQueryWrapper<AdminUser> queryWrapper = new LambdaQueryWrapper<AdminUser>()
-                .orderByDesc(AdminUser::getCreateTime);
+                .like(StringUtils.isNotBlank(username), AdminUser::getUsername, username)
+                .like(StringUtils.isNotBlank(realName), AdminUser::getRealName, realName)
+                .eq(status != null, AdminUser::getStatus, status)
+                .orderByAsc(AdminUser::getId);
 
         return adminUserMapper.selectPage(page, queryWrapper).convert(user -> {
             AdminUserVO vo = new AdminUserVO();
@@ -49,6 +55,7 @@ public class AdminUserServiceImpl implements AdminUserService {
             vo.setStatus(user.getStatus());
             vo.setLastLoginTime(user.getLastLoginTime());
             vo.setCreateTime(user.getCreateTime());
+            vo.setUpdateTime(user.getUpdateTime());
             return vo;
         });
     }
@@ -140,9 +147,28 @@ public class AdminUserServiceImpl implements AdminUserService {
             throw new GeneralBusinessException("管理员不存在");
         }
 
-        adminUser.setStatus(0);
-        adminUser.setUpdateBy(operatorId);
+        int result = adminUserMapper.deleteById(id);
+        if (result == 0) {
+            throw new GeneralBusinessException("管理员不存在，删除失败");
+        }
 
-        adminUserMapper.updateById(adminUser);
+    }
+
+    /**
+     * 根据ID获取管理员用户详情的实现
+     * @param id 用户ID
+     * @return 用户详情VO
+     */
+    @Override
+    public AdminUserVO getAdminUserById(Long id) {
+        AdminUser adminUser = adminUserMapper.selectById(id);
+        if (adminUser == null) {
+            // 您可以根据需要抛出一个用户不存在的异常
+            return null;
+        }
+        AdminUserVO adminUserVO = new AdminUserVO();
+        BeanUtils.copyProperties(adminUser, adminUserVO);
+        // 如果需要，这里还可以填充角色等其他信息
+        return adminUserVO;
     }
 }

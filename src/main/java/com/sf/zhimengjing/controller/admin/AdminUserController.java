@@ -39,8 +39,11 @@ public class AdminUserController {
     @Log(module = "管理员管理", operation = "查询列表")
     public Result<IPage<AdminUserVO>> pageAdminUsers(
             @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        return Result.success(adminUserService.pageAdminUsers(pageNum, pageSize));
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String realName,
+            @RequestParam(required = false) Integer status) {
+        return Result.success(adminUserService.pageAdminUsers(pageNum, pageSize, username, realName, status));
     }
 
     /**
@@ -93,5 +96,16 @@ public class AdminUserController {
 
         adminUserService.deleteAdminUser(id, operatorId);
         return Result.success("删除成功");
+    }
+
+    /**
+     *获取指定用户详情
+     * @param id 用户ID
+     * @return 用户详情
+     */
+    @GetMapping("/{id}")
+    public Result<AdminUserVO> getAdminUserById(@PathVariable Long id) {
+        AdminUserVO adminUserVO = adminUserService.getAdminUserById(id);
+        return Result.success(adminUserVO);
     }
 }

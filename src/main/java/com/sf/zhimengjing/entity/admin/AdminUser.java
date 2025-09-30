@@ -1,9 +1,11 @@
 package com.sf.zhimengjing.entity.admin;
 
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.sf.zhimengjing.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
 import java.time.LocalDateTime;
 
 /**
@@ -80,4 +82,10 @@ public class AdminUser extends BaseEntity {
      * 修改人ID
      */
     private Long updateBy;
+
+    /**
+     * 逻辑删除字段 (0: 未删除, 1: 已删除)
+     */
+    @TableLogic
+    private Integer deleted;
 }
