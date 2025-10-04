@@ -3,6 +3,12 @@ spring:
     name: 织梦境
   profiles:
     active: dev
+  servlet:
+    multipart:
+      # 单个文件大小限制，建议和 oss.upload.image-max-size 等保持一致
+      max-file-size: 200MB
+      # 一次请求总大小限制
+      max-request-size: 500MB
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
@@ -48,3 +54,43 @@ jasypt:
   encryptor:
     password: yongjannes   # !!! 请务必替换为一个复杂、随机的强密码 !!!
     algorithm: PBEWithMD5AndDES # 可以选择加密算法，这是默认值
+
+
+# OSS对象存储配置
+oss:
+  # 启用的云存储服务商：aliyun（阿里云）或 tencent（腾讯云）
+  provider: aliyun
+
+  # 文件上传限制配置
+  upload:
+    # 全局最大文件大小（字节）：100MB
+    max-size: 104857600
+    # 允许的图片格式
+    allowed-image-types: jpg,jpeg,png,gif,webp,bmp,svg,ico
+    # 允许的文档格式
+    allowed-document-types: pdf,doc,docx,xls,xlsx,ppt,pptx,txt,md,csv
+    # 允许的视频格式
+    allowed-video-types: mp4,avi,mov,wmv,flv,mkv,webm,m4v
+    # 允许的音频格式
+    allowed-audio-types: mp3,wav,flac,aac,ogg,wma,m4a
+    # 允许的压缩包格式
+    allowed-archive-types: zip,rar,7z,tar,gz,bz2
+    # 分类文件大小限制（字节）
+    image-max-size: 10485760      # 图片最大10MB
+    document-max-size: 52428800   # 文档最大50MB
+    video-max-size: 524288000     # 视频最大500MB
+    audio-max-size: 104857600     # 音频最大100MB
+    archive-max-size: 209715200   # 压缩包最大200MB
+
+  # 文件访问URL过期时间（秒），默认7200秒（2小时）
+  url-expiration: 7200
+
+  # 自动删除配置（可选）
+  auto-delete:
+    enabled: false  # 是否启用自动删除过期文件
+    days: 30  # 保留天数
+
+  # CDN加速配置（可选）
+  cdn:
+    enabled: false  # 是否启用CDN
+    domain: ""  # CDN加速域名

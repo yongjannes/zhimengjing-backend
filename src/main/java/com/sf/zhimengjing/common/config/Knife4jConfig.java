@@ -48,7 +48,8 @@ public class Knife4jConfig {
                 // 匹配白名单路径
                 .pathsToMatch(
                         "/user/login",
-                        "/captcha/graph-captcha/**"
+                        "/captcha/graph-captcha/**",
+                        "/api/file/**"
                 )
                 .build();
     }

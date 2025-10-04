@@ -35,6 +35,36 @@ knife4j:
     username: admin
     password: 123456
 
+
+oss:
+  # 阿里云OSS配置
+  aliyun:
+    endpoint: https://oss-cn-beijing.aliyuncs.com  # OSS访问域名（Endpoint）
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID}  # 阿里云AccessKeyId
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET}  # 加密后的AccessKeySecret
+    bucket-name: file-sile  # Bucket名称
+    base-path: files/  # 存储基础路径（可为空）
+    # 高级配置（可选）
+    connect-timeout: 5000  # 连接超时时间（毫秒）
+    socket-timeout: 50000  # Socket超时时间（毫秒）
+    max-connections: 1024  # 最大连接数
+    # 图片处理配置（可选）
+    image-style: ""  # 图片样式名称（OSS图片处理）
+
+  # 腾讯云COS配置
+  tencent:
+    secret-id: ${YOUR_TENCENT_SECRET_ID}  # 腾讯云SecretId
+    secret-key: ${YOUR_ENCRYPTED_SECRET_KEY} # 加密后的SecretKey
+    region: ap-guangzhou  # 存储桶地域（Region）
+    bucket-name: your-bucket-1234567890  # 存储桶名称（含APPID）
+    base-path: files/  # 存储基础路径（可为空）
+    # 高级配置（可选）
+    connection-timeout: 5000  # 连接超时时间（毫秒）
+    socket-timeout: 50000  # Socket超时时间（毫秒）
+    max-connections: 1024  # 最大连接数
+    # CDN配置（可选）
+    cdn-domain: ""  # CDN加速域名
+
 logging:
   level:
     org.springframework.ai: TRACE # AI对话的日志级别

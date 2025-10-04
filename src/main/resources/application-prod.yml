@@ -22,3 +22,37 @@ spring:
 knife4j:
   basic:
     enable: false
+
+oss:
+  provider: aliyun  # 生产环境使用阿里云
+  url-expiration: 3600  # 生产环境缩短URL有效期
+
+  aliyun:
+    endpoint: https://oss-cn-shanghai.aliyuncs.com
+    access-key-id: ENC(YOUR_ENCRYPTED_ACCESS_KEY_ID)
+    access-key-secret: ENC(YOUR_ENCRYPTED_SECRET)
+    bucket-name: your-prod-bucket
+    base-path: files/
+    connect-timeout: 3000
+    socket-timeout: 30000
+    max-connections: 2048
+
+  tencent:
+    secret-id: ENC(YOUR_ENCRYPTED_SECRET_ID)
+    secret-key: ENC(YOUR_ENCRYPTED_SECRET_KEY)
+    region: ap-shanghai
+    bucket-name: your-prod-bucket-1234567890
+    base-path: files/
+    connection-timeout: 3000
+    socket-timeout: 30000
+    max-connections: 2048
+
+  # 生产环境启用CDN
+  cdn:
+    enabled: true
+    domain: https://cdn.yourdomain.com
+
+  # 生产环境启用自动清理
+  auto-delete:
+    enabled: true
+    days: 90
