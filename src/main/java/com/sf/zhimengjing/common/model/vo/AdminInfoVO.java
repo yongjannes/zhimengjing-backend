@@ -21,8 +21,8 @@ public class AdminInfoVO {
     private String username;
     @Schema(description = "真实姓名")
     private String realName;
-    @Schema(description = "头像URL")
-    private String avatar;
+    @Schema(description = "头像VO")
+    private AvatarVO avatar;
     @Schema(description = "角色编码列表")
     private List<String> roles;
     @Schema(description = "权限标识列表")

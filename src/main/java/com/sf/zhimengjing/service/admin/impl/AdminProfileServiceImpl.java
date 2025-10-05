@@ -2,6 +2,7 @@ package com.sf.zhimengjing.service.admin.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.sf.zhimengjing.common.config.properties.OssProperties;
 import com.sf.zhimengjing.common.enumerate.EmailTemplateEnum;
 import com.sf.zhimengjing.common.enumerate.ResultEnum;
 import com.sf.zhimengjing.common.exception.AccountNotFoundException;
@@ -11,6 +12,7 @@ import com.sf.zhimengjing.common.model.dto.AdminChangePasswordDTO;
 import com.sf.zhimengjing.common.model.dto.AdminUpdateInfoDTO;
 import com.sf.zhimengjing.common.model.vo.AdminLoginLogVO;
 import com.sf.zhimengjing.common.model.vo.AdminProfileVO;
+import com.sf.zhimengjing.common.model.vo.AvatarVO;
 import com.sf.zhimengjing.common.util.EmailApi;
 import com.sf.zhimengjing.entity.admin.AdminLoginLog;
 import com.sf.zhimengjing.entity.admin.AdminRole;
@@ -18,6 +20,7 @@ import com.sf.zhimengjing.entity.admin.AdminUser;
 import com.sf.zhimengjing.mapper.admin.AdminLoginLogMapper;
 import com.sf.zhimengjing.mapper.admin.AdminRoleMapper;
 import com.sf.zhimengjing.mapper.admin.AdminUserMapper;
+import com.sf.zhimengjing.service.OssService;
 import com.sf.zhimengjing.service.admin.AdminProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +33,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +58,9 @@ public class AdminProfileServiceImpl implements AdminProfileService {
 
     private final EmailApi emailApi;
     private final StringRedisTemplate stringRedisTemplate;
+
+    private final OssProperties ossProperties;
+    private final OssService ossService;
 
     @Override
     public AdminProfileVO getProfile(Long adminId) {
@@ -92,14 +100,33 @@ public class AdminProfileServiceImpl implements AdminProfileService {
         if (updateDTO.getRealName() != null) {
             adminUser.setRealName(updateDTO.getRealName());
         }
-        if (updateDTO.getEmail() != null) {
-            adminUser.setEmail(updateDTO.getEmail());
-        }
         if (updateDTO.getPhone() != null) {
             adminUser.setPhone(updateDTO.getPhone());
         }
-        if (updateDTO.getAvatar() != null) {
-            adminUser.setAvatar(updateDTO.getAvatar());
+        String avatarValue = updateDTO.getAvatar();
+        if (StringUtils.isNotBlank(avatarValue)) {
+            // 判断前端传来的是否为一个完整的URL
+            if (avatarValue.trim().startsWith("http")) {
+                try {
+                    // 如果是URL，则解析出其中的路径（即fileKey）
+                    URL url = new URL(avatarValue);
+                    String path = url.getPath();
+
+                    // getPath()会返回以'/'开头的路径，需要去除
+                    if (path.startsWith("/")) {
+                        path = path.substring(1);
+                    }
+                    adminUser.setAvatar(path);
+                } catch (MalformedURLException e) {
+                    // 如果URL格式错误，记录日志并且不更新头像，防止存入错误数据
+                    log.error("更新头像失败：接收到格式错误的URL {}", avatarValue, e);
+                    // 抛出异常或根据业务需求决定是否静默处理
+                    throw new GeneralBusinessException("头像URL格式不正确");
+                }
+            } else {
+                // 如果不是URL（例如未来可能直接传递fileKey），直接使用
+                adminUser.setAvatar(avatarValue);
+            }
         }
 
         adminUser.setUpdateBy(adminId);
@@ -261,5 +288,20 @@ public class AdminProfileServiceImpl implements AdminProfileService {
         stringRedisTemplate.delete(hashKey);
 
         log.info("管理员邮箱已修改: id={}, newEmail={}", adminId, newEmail);
+    }
+
+    @Override
+    public AvatarVO refreshAvatar(Long adminId) {
+        AdminUser adminUser = adminUserMapper.selectById(adminId);
+        if (Objects.isNull(adminUser) || !StringUtils.isNotBlank(adminUser.getAvatar())) {
+            // 如果用户不存在或没有头像，返回null或一个空的VO
+            return new AvatarVO();
+        }
+
+        String avatarFileKey = adminUser.getAvatar();
+        String newAvatarUrl = ossService.getFileUrl(avatarFileKey);
+        long expiresAt = System.currentTimeMillis() + ossProperties.getUrlExpiration() * 1000;
+
+        return new AvatarVO(newAvatarUrl, expiresAt);
     }
 }

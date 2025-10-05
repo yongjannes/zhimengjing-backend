@@ -8,7 +8,9 @@ import com.sf.zhimengjing.common.model.dto.ChangeEmailDTO;
 import com.sf.zhimengjing.common.model.dto.SendChangeEmailCodeDTO;
 import com.sf.zhimengjing.common.model.vo.AdminLoginLogVO;
 import com.sf.zhimengjing.common.model.vo.AdminProfileVO;
+import com.sf.zhimengjing.common.model.vo.AvatarVO;
 import com.sf.zhimengjing.common.result.Result;
+import com.sf.zhimengjing.common.util.SecurityUtils;
 import com.sf.zhimengjing.service.admin.AdminProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -109,6 +111,13 @@ public class AdminProfileController {
         Long adminId = Long.parseLong(adminIdStr);
         adminProfileService.changeEmail(adminId, dto.getNewEmail(), dto.getCaptcha());
         return Result.success("邮箱修改成功");
+    }
+
+    @GetMapping("/refresh-avatar")
+    @Operation(summary = "7. 刷新头像URL", description = "获取一个新的带有时效性的头像访问URL")
+    public AvatarVO refreshAvatar() {
+        Long adminId = SecurityUtils.getUserId();
+        return adminProfileService.refreshAvatar(adminId);
     }
 
 }

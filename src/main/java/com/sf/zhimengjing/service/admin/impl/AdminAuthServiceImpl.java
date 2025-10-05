@@ -3,6 +3,7 @@ package com.sf.zhimengjing.service.admin.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sf.zhimengjing.common.config.properties.OssProperties;
 import com.sf.zhimengjing.common.constant.SystemConstants;
 import com.sf.zhimengjing.common.enumerate.EmailTemplateEnum;
 import com.sf.zhimengjing.common.enumerate.ResultEnum;
@@ -11,6 +12,7 @@ import com.sf.zhimengjing.common.model.dto.AdminChangePasswordDTO;
 import com.sf.zhimengjing.common.model.dto.AdminLoginDTO;
 import com.sf.zhimengjing.common.model.vo.AdminInfoVO;
 import com.sf.zhimengjing.common.model.vo.AdminLoginVO;
+import com.sf.zhimengjing.common.model.vo.AvatarVO;
 import com.sf.zhimengjing.common.util.EmailApi;
 import com.sf.zhimengjing.common.util.IpUtils;
 import com.sf.zhimengjing.common.util.JwtUtils;
@@ -20,6 +22,7 @@ import com.sf.zhimengjing.entity.admin.AdminUser;
 import com.sf.zhimengjing.mapper.admin.AdminLoginLogMapper;
 import com.sf.zhimengjing.mapper.admin.AdminRoleMapper;
 import com.sf.zhimengjing.mapper.admin.AdminUserMapper;
+import com.sf.zhimengjing.service.OssService;
 import com.sf.zhimengjing.service.admin.AdminAuthService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,6 +66,10 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     private final ObjectMapper objectMapper;
     private final JwtUtils jwtUtils;
     private final EmailApi emailApi;
+
+    private final OssService ossService;
+    private final OssProperties ossProperties;
+
     // 账户锁定时间（分钟）
     private static final long LOCK_TIME_MINUTES = 5;
 
@@ -203,11 +210,19 @@ public class AdminAuthServiceImpl implements AdminAuthService {
             permissions = objectMapper.readValue(adminRole.getPermissions(), new TypeReference<List<String>>() {});
         }
 
+        AvatarVO avatarVO = null;
+        // 如果用户有头像 (avatar字段存储的是fileKey)
+        if (StringUtils.hasText(adminUser.getAvatar())) {
+            String avatarUrl = ossService.getFileUrl(adminUser.getAvatar());
+            // 计算过期时间的毫秒时间戳
+            long expiresAt = System.currentTimeMillis() + ossProperties.getUrlExpiration() * 1000;
+            avatarVO = new AvatarVO(avatarUrl, expiresAt);
+        }
         return AdminInfoVO.builder()
                 .id(adminUser.getId())
                 .username(adminUser.getUsername())
                 .realName(adminUser.getRealName())
-                .avatar(adminUser.getAvatar())
+                .avatar(avatarVO)
                 .roles(roles)
                 .permissions(permissions)
                 .build();

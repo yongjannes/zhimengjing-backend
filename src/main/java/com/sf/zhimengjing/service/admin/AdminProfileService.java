@@ -5,6 +5,7 @@ import com.sf.zhimengjing.common.model.dto.AdminChangePasswordDTO;
 import com.sf.zhimengjing.common.model.dto.AdminUpdateInfoDTO;
 import com.sf.zhimengjing.common.model.vo.AdminLoginLogVO;
 import com.sf.zhimengjing.common.model.vo.AdminProfileVO;
+import com.sf.zhimengjing.common.model.vo.AvatarVO;
 
 /**
  * @Title: AdminProfileService
@@ -64,4 +65,13 @@ public interface AdminProfileService {
      * @param captcha  验证码
      */
     void changeEmail(Long adminId, String newEmail, String captcha);
+
+    /**
+     * 刷新头像
+     *
+     * @param adminId 管理员ID
+     * @return 头像信息
+     */
+
+    AvatarVO refreshAvatar(Long adminId);
 }
