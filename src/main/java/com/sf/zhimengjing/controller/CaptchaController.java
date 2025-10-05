@@ -54,7 +54,7 @@ public class CaptchaController {
      */
     @PostMapping("/mail/verify")
     @Operation(summary = "验证邮箱验证码", description = "验证邮箱验证码是否正确，验证成功后验证码自动失效")
-    public boolean verifyEmailCaptcha(
+    public String verifyEmailCaptcha(
             @Parameter(description = "邮箱地址", required = true, example = "example@qq.com")
             @RequestParam
             @Email(message = "邮箱格式不正确")

@@ -85,7 +85,7 @@ public class EmailCaptchaServiceImpl implements EmailCaptchaService {
     }
 
     @Override
-    public boolean verifyMailCaptcha(String email, String captcha) {
+    public String verifyMailCaptcha(String email, String captcha) {
         String hashKey = "login:email:captcha:" + email;
         BoundHashOperations<String, String, String> hashOps = stringRedisTemplate.boundHashOps(hashKey);
 
@@ -96,17 +96,15 @@ public class EmailCaptchaServiceImpl implements EmailCaptchaService {
             throw new GeneralBusinessException("验证码不存在或已过期");
         }
 
-        boolean isValid = storedCaptcha.equals(captcha);
 
-        if (isValid) {
-            // 验证成功后删除验证码
-            stringRedisTemplate.delete(hashKey);
-            log.info("验证码验证成功，邮箱：{}", email);
-        } else {
+        // 验证验证码是否正确
+        if (!storedCaptcha.equals(captcha)) {
             log.warn("验证码验证失败，邮箱：{}", email);
             throw new GeneralBusinessException("验证码错误");
         }
-
-        return isValid;
+        // 验证成功后删除验证码
+        stringRedisTemplate.delete(hashKey);
+        log.info("验证码验证成功，邮箱：{}", email);
+        return hashKey;
     }
 }

@@ -15,9 +15,10 @@ public interface EmailCaptchaService {
 
     /**
      * 验证邮箱验证码
-     * @param email 邮箱地址
+     *
+     * @param email   邮箱地址
      * @param captcha 验证码
-     * @return 是否验证成功
+     * @return
      */
-    boolean verifyMailCaptcha(String email, String captcha);
+    String verifyMailCaptcha(String email, String captcha);
 }
