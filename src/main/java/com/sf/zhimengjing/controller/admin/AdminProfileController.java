@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sf.zhimengjing.common.annotation.Log;
 import com.sf.zhimengjing.common.model.dto.AdminChangePasswordDTO;
 import com.sf.zhimengjing.common.model.dto.AdminUpdateInfoDTO;
+import com.sf.zhimengjing.common.model.dto.ChangeEmailDTO;
+import com.sf.zhimengjing.common.model.dto.SendChangeEmailCodeDTO;
 import com.sf.zhimengjing.common.model.vo.AdminLoginLogVO;
 import com.sf.zhimengjing.common.model.vo.AdminProfileVO;
 import com.sf.zhimengjing.common.result.Result;
@@ -82,4 +84,31 @@ public class AdminProfileController {
         Page<AdminLoginLogVO> logs = adminProfileService.getLoginLogs(adminId, pageNum, pageSize);
         return Result.success(logs);
     }
+
+    /**
+     * 发送修改邮箱验证码
+     */
+    @PostMapping("/email/send-code")
+    @Operation(summary = "5. 发送修改邮箱验证码")
+    @Log(module = "个人中心", operation = "发送修改邮箱验证码")
+    public Result<String> sendChangeEmailCode(@Valid @RequestBody SendChangeEmailCodeDTO dto) {
+        String adminIdStr = SecurityContextHolder.getContext().getAuthentication().getName();
+        Long adminId = Long.parseLong(adminIdStr);
+        adminProfileService.sendChangeEmailCode(adminId, dto.getNewEmail());
+        return Result.success("验证码已发送到新邮箱，请查收");
+    }
+
+    /**
+     * 验证并修改邮箱
+     */
+    @PutMapping("/email")
+    @Operation(summary = "6. 修改邮箱")
+    @Log(module = "个人中心", operation = "修改邮箱")
+    public Result<String> changeEmail(@Valid @RequestBody ChangeEmailDTO dto) {
+        String adminIdStr = SecurityContextHolder.getContext().getAuthentication().getName();
+        Long adminId = Long.parseLong(adminIdStr);
+        adminProfileService.changeEmail(adminId, dto.getNewEmail(), dto.getCaptcha());
+        return Result.success("邮箱修改成功");
+    }
+
 }

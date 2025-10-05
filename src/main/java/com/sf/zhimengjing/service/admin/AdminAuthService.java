@@ -38,4 +38,20 @@ public interface AdminAuthService {
      * 重置密码
      */
     String resetPassword(Long targetAdminId, Long currentAdminId);
+
+    /**
+     * 发送忘记密码验证码
+     *
+     * @param identifier 用户名或邮箱
+     */
+    void sendForgotPasswordCode(String identifier);
+
+    /**
+     * 通过验证码重置密码
+     *
+     * @param email       邮箱
+     * @param captcha     验证码
+     * @param newPassword 新密码
+     */
+    void resetPasswordByCaptcha(String email, String captcha, String newPassword);
 }

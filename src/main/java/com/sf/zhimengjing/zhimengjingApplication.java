@@ -9,6 +9,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.Environment;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.net.InetAddress;
@@ -27,6 +28,7 @@ import java.util.stream.Stream;
 @SpringBootApplication
 @MapperScan("com.sf.zhimengjing.mapper")
 @EnableScheduling
+@EnableAsync
 public class zhimengjingApplication {
 
     public static void main(String[] args) {

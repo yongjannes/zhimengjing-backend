@@ -47,4 +47,21 @@ public interface AdminProfileService {
      * @return 登录日志分页数据
      */
     Page<AdminLoginLogVO> getLoginLogs(Long adminId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 发送修改邮箱验证码
+     *
+     * @param adminId  管理员ID
+     * @param newEmail 新邮箱地址
+     */
+    void sendChangeEmailCode(Long adminId, String newEmail);
+
+    /**
+     * 验证并修改邮箱
+     *
+     * @param adminId  管理员ID
+     * @param newEmail 新邮箱地址
+     * @param captcha  验证码
+     */
+    void changeEmail(Long adminId, String newEmail, String captcha);
 }

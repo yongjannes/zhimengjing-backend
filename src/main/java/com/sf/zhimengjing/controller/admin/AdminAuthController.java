@@ -4,6 +4,8 @@ import com.sf.zhimengjing.common.annotation.Log;
 import com.sf.zhimengjing.common.annotation.RepeatSubmit;
 import com.sf.zhimengjing.common.model.dto.AdminChangePasswordDTO;
 import com.sf.zhimengjing.common.model.dto.AdminLoginDTO;
+import com.sf.zhimengjing.common.model.dto.ForgotPasswordResetDTO;
+import com.sf.zhimengjing.common.model.dto.ForgotPasswordSendCodeDTO;
 import com.sf.zhimengjing.common.model.vo.AdminInfoVO;
 import com.sf.zhimengjing.common.model.vo.AdminLoginVO;
 import com.sf.zhimengjing.common.result.Result;
@@ -105,5 +107,33 @@ public class AdminAuthController {
         Long currentAdminId = Long.parseLong(adminIdStr);
         String newPassword = adminAuthService.resetPassword(targetAdminId, currentAdminId);
         return Result.success("重置密码成功，新密码为：" + newPassword);
+    }
+
+    /**
+     * 发送忘记密码验证码
+     *
+     * @param dto 包含用户名或邮箱
+     * @return 发送结果
+     */
+    @PostMapping("/forgot-password/send-code")
+    @Operation(summary = "发送忘记密码验证码")
+    @Log(module = "后台认证", operation = "发送忘记密码验证码")
+    public Result<String> sendForgotPasswordCode(@Valid @RequestBody ForgotPasswordSendCodeDTO dto) {
+        adminAuthService.sendForgotPasswordCode(dto.getIdentifier());
+        return Result.success("验证码已发送，请查收邮件");
+    }
+
+    /**
+     * 通过验证码重置密码
+     *
+     * @param dto 包含邮箱、验证码和新密码
+     * @return 重置结果
+     */
+    @PostMapping("/forgot-password/reset")
+    @Operation(summary = "通过验证码重置密码")
+    @Log(module = "后台认证", operation = "重置密码")
+    public Result<String> resetPasswordByCaptcha(@Valid @RequestBody ForgotPasswordResetDTO dto) {
+        adminAuthService.resetPasswordByCaptcha(dto.getEmail(), dto.getCaptcha(), dto.getNewPassword());
+        return Result.success("密码重置成功，请使用新密码登录");
     }
 }

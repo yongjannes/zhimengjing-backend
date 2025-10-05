@@ -14,6 +14,14 @@ public interface EmailCaptchaService {
     void sendMailCaptcha(String email);
 
     /**
+     * 【新增】异步发送忘记密码邮件
+     *
+     * @param email 收件人邮箱
+     * @param captcha 验证码
+     */
+    void sendForgotPasswordCodeAsync(String email, String captcha);
+
+    /**
      * 验证邮箱验证码
      *
      * @param email   邮箱地址

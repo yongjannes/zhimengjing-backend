@@ -64,7 +64,9 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/swagger-resources/**",
                                 "/admin/auth/login",
-                                "/api/dream-analysis/analyze/stream"
+                                "/api/dream-analysis/analyze/stream",
+                                "/captcha/mail/**",
+                                "/admin/auth/forgot-password/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

@@ -46,7 +46,33 @@ public enum EmailTemplateEnum {
             "<p style='color: #999; font-size: 12px; text-align: center;'>此邮件由系统自动发送，请勿回复</p>" +
             "</div></div></body></html>", "【织梦境】欢迎注册"),
 
-    ;
+
+
+    // 忘记密码验证码邮件
+    FORGOT_PASSWORD_EMAIL_HTML("<html><body><div style='padding: 20px; background-color: #f5f5f5;'>" +
+                                       "<div style='max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>" +
+                                       "<h2 style='color: #333; text-align: center;'>重置密码验证码</h2>" +
+                                       "<p style='color: #666; font-size: 14px;'>尊敬的用户，您好：</p>" +
+                                       "<p style='color: #666; font-size: 14px;'>您正在进行密码重置操作，验证码是：</p>" +
+                                       "<h1 style='color: #e74c3c; text-align: center; letter-spacing: 5px; font-size: 32px;'>%s</h1>" +
+                                       "<p style='color: #999; font-size: 12px; text-align: center;'>验证码5分钟内有效，请勿泄露给他人</p>" +
+                                       "<p style='color: #ff6b6b; font-size: 12px; text-align: center;'>如非本人操作，请忽略此邮件</p>" +
+                                       "<hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>" +
+                                       "<p style='color: #999; font-size: 12px; text-align: center;'>此邮件由系统自动发送，请勿回复</p>" +
+                                       "</div></div></body></html>", "【织梦境】重置密码验证码"),
+
+    // 修改邮箱验证码邮件
+    CHANGE_EMAIL_CODE_HTML("<html><body><div style='padding: 20px; background-color: #f5f5f5;'>" +
+                                   "<div style='max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>" +
+                                   "<h2 style='color: #333; text-align: center;'>修改邮箱验证码</h2>" +
+                                   "<p style='color: #666; font-size: 14px;'>尊敬的用户，您好：</p>" +
+                                   "<p style='color: #666; font-size: 14px;'>您正在进行邮箱修改操作，验证码是：</p>" +
+                                   "<h1 style='color: #52c41a; text-align: center; letter-spacing: 5px; font-size: 32px;'>%s</h1>" +
+                                   "<p style='color: #999; font-size: 12px; text-align: center;'>验证码5分钟内有效，请勿泄露给他人</p>" +
+                                   "<p style='color: #ff6b6b; font-size: 12px; text-align: center;'>如非本人操作，请立即修改密码并联系管理员</p>" +
+                                   "<hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>" +
+                                   "<p style='color: #999; font-size: 12px; text-align: center;'>此邮件由系统自动发送，请勿回复</p>" +
+                                   "</div></div></body></html>", "【织梦境】修改邮箱验证码");
 
     private final String template;
     private final String subject;

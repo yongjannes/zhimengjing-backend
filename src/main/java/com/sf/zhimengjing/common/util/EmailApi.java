@@ -9,6 +9,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -90,6 +91,34 @@ public class EmailApi {
         }
     }
 
+
+    /**
+     * 异步发送html格式的邮件
+     * @param subject 主题
+     * @param content HTML内容
+     * @param to 收件人
+     */
+    @Async
+    public void sendHtmlEmailAsync(String subject, String content, String... to) {
+        try {
+            // 创建邮件消息
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+            helper.setFrom(from);
+            // 设置收件人
+            helper.setTo(to);
+            // 设置邮件主题
+            helper.setSubject(subject);
+            // 设置邮件内容
+            helper.setText(content, true);
+
+            // 发送邮件
+            mailSender.send(mimeMessage);
+            log.info("异步发送HTML邮件成功，收件人：{}", String.join(",", to));
+        } catch (Exception e) {
+            log.error("异步发送HTML邮件失败，收件人：{}，错误信息：{}", String.join(",", to), e.getMessage());
+        }
+    }
     /**
      * 发送带附件的邮件
      * @param subject 主题
