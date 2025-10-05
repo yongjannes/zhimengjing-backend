@@ -2,6 +2,19 @@ server:
   port: 8888
 
 spring:
+  mail:
+    host: smtp.qq.com #邮件服务器地址
+    protocol: smtp #协议
+    username: 2380444947@qq.com #发送邮件的邮箱也就是你开通服务的邮箱
+    password: yluixjvbrbrpebdg #开通服务后得到的授权码
+    default-encoding: utf-8 #邮件内容的编码
+    port: 465
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
   ai:
     # 关闭模型的自动配置，我们将手动管理
     model:

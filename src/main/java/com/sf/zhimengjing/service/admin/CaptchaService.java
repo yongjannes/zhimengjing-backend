@@ -15,4 +15,6 @@ public interface CaptchaService {
      * @return 验证码视图对象
      */
     CaptchaVO getCaptcha(String captchaId);
+
+
 }
