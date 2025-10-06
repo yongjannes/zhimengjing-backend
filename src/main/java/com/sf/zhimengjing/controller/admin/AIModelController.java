@@ -27,6 +27,7 @@ import java.util.List;
 @RequestMapping("/admin/ai/models")
 @RequiredArgsConstructor
 @Tag(name = "AI模型管理接口")
+@PreAuthorize("hasAuthority('system:ai:config')")
 public class AIModelController {
 
     private final AIModelService aiModelService;

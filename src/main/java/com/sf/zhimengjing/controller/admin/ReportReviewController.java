@@ -27,6 +27,7 @@ import java.time.LocalDate;
 @RequestMapping("/admin/report/review")
 @RequiredArgsConstructor
 @Tag(name = "报告审核管理接口")
+@PreAuthorize("hasAuthority('ops:report:view')")
 public class ReportReviewController {
 
     private final ReportReviewService reportReviewService;

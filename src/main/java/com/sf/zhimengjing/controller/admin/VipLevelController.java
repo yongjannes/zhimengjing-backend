@@ -23,6 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/admin/vip/levels")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ops:vip:manage')")
 @Tag(name = "VIP等级管理接口")
 public class VipLevelController {
 

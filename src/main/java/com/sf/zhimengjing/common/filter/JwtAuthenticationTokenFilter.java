@@ -1,10 +1,14 @@
 package com.sf.zhimengjing.common.filter;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sf.zhimengjing.common.constant.SystemConstants;
 import com.sf.zhimengjing.common.util.JwtUtils;
 import com.sf.zhimengjing.entity.User;
+import com.sf.zhimengjing.entity.admin.AdminRole;
 import com.sf.zhimengjing.entity.admin.AdminUser;
 import com.sf.zhimengjing.mapper.UserMapper;
+import com.sf.zhimengjing.mapper.admin.AdminRoleMapper;
 import com.sf.zhimengjing.mapper.admin.AdminUserMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -16,13 +20,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @Title: JwtAuthenticationTokenFilter
@@ -41,15 +49,20 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     private final AdminUserMapper adminUserMapper;
     private final RedisTemplate<String, Object> redisTemplate;
 
+    private final AdminRoleMapper adminRoleMapper;
+    private final ObjectMapper objectMapper;
+
 
     @Value("${jwt.refresh-threshold}")
     private long refreshThreshold;
 
-    public JwtAuthenticationTokenFilter(JwtUtils jwtUtils, UserMapper userMapper, AdminUserMapper adminUserMapper, RedisTemplate<String, Object> redisTemplate) {
+    public JwtAuthenticationTokenFilter(JwtUtils jwtUtils, UserMapper userMapper, AdminUserMapper adminUserMapper, RedisTemplate<String, Object> redisTemplate, AdminRoleMapper adminRoleMapper, ObjectMapper objectMapper) {
         this.jwtUtils = jwtUtils;
         this.userMapper = userMapper;
         this.adminUserMapper = adminUserMapper;
         this.redisTemplate = redisTemplate;
+        this.adminRoleMapper = adminRoleMapper;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -99,8 +112,11 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             }
             AdminUser adminUser = adminUserMapper.selectById(adminId);
             if (adminUser != null && adminUser.getStatus() == 1) {
+                List<GrantedAuthority> authorities = loadAdminAuthorities(adminUser);
+
+
                 UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(adminId, null, Collections.emptyList());
+                        new UsernamePasswordAuthenticationToken(adminId, null,authorities);
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 log.info("[JWT Filter] 管理员认证成功: id={}, username={}", adminUser.getId(), adminUser.getUsername());
                 tryToRefreshToken(token, claims, response);
@@ -145,6 +161,37 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             // 暴露自定义的响应头 "Authorization"，以便前端JS可以访问
             response.setHeader("Access-Control-Expose-Headers", "Authorization");
             log.info("[JWT Filter] Token 刷新成功！");
+        }
+    }
+
+    private List<GrantedAuthority> loadAdminAuthorities(AdminUser adminUser) {
+        try {
+            // 1. 根据角色ID查询角色
+            AdminRole adminRole = adminRoleMapper.selectById(adminUser.getRoleId());
+            if (adminRole == null || StringUtils.isBlank(adminRole.getPermissions())) {
+                log.warn("[JWT Filter] 管理员角色不存在或无权限: userId={}, roleId={}",
+                        adminUser.getId(), adminUser.getRoleId());
+                return Collections.emptyList();
+            }
+
+            // 2. 解析权限JSON字符串
+            List<String> permissions = objectMapper.readValue(
+                    adminRole.getPermissions(),
+                    new TypeReference<List<String>>() {}
+            );
+
+            // 3. 转换为 GrantedAuthority
+            List<GrantedAuthority> authorities = permissions.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+
+            log.debug("[JWT Filter] 加载管理员权限成功: userId={}, roleId={}, permissions={}",
+                    adminUser.getId(), adminUser.getRoleId(), permissions);
+
+            return authorities;
+        } catch (Exception e) {
+            log.error("[JWT Filter] 加载管理员权限失败: userId={}", adminUser.getId(), e);
+            return Collections.emptyList();
         }
     }
 }

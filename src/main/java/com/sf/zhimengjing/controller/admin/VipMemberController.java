@@ -25,6 +25,7 @@ import java.util.List;
 @RequestMapping("/api/vip/member")
 @Tag(name = "VIP会员管理", description = "提供会员信息查询、激活、续费、升级、取消及统计接口")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ops:vip:manage')")
 public class VipMemberController {
 
     private final VipMemberService vipMemberService;

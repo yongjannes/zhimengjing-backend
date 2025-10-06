@@ -29,6 +29,7 @@ import java.util.List;
 @RequestMapping("/admin/system/config-history")
 @RequiredArgsConstructor
 @Tag(name = "配置变更历史", description = "配置变更历史相关操作接口")
+@PreAuthorize("hasAuthority('system:sys:config')")
 public class ConfigChangeHistoryController {
 
     private final ConfigChangeHistoryService configChangeHistoryService;

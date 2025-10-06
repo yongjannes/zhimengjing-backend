@@ -37,6 +37,7 @@ public class AdminUserController {
      */
     @GetMapping
     @Operation(summary = "分页查询后台管理员列表")
+    @PreAuthorize("hasAuthority('user:admin:view')")
     @Log(module = "管理员管理", operation = "查询列表")
     public Result<IPage<AdminUserVO>> pageAdminUsers(
             @RequestParam(defaultValue = "1") int pageNum,
@@ -55,6 +56,7 @@ public class AdminUserController {
      */
     @PostMapping
     @Operation(summary = "创建后台管理员")
+    @PreAuthorize("hasAuthority('user:admin:add')")
     @Log(module = "管理员管理", operation = "创建管理员")
     public Result<String> createAdminUser(@Valid @RequestBody AdminUserDTO adminUserDTO) {
         String creatorIdStr = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -71,6 +73,7 @@ public class AdminUserController {
      * @return Result<String> 更新结果信息
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:admin:edit')")
     @Operation(summary = "更新后台管理员信息")
     @Log(module = "管理员管理", operation = "更新管理员")
     public Result<String> updateAdminUser(@PathVariable Long id, @Valid @RequestBody AdminUserDTO adminUserDTO) {
@@ -104,6 +107,7 @@ public class AdminUserController {
      * @return 用户详情
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:admin:view')")
     public Result<AdminUserVO> getAdminUserById(@PathVariable Long id) {
         AdminUserVO adminUserVO = adminUserService.getAdminUserById(id);
         return Result.success(adminUserVO);

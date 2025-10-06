@@ -34,6 +34,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
+@PreAuthorize("hasAuthority('ops:stats:view')")
 public class DreamContentAnalyticsController {
 
     private final DreamContentAnalyticsService dreamContentAnalyticsService;

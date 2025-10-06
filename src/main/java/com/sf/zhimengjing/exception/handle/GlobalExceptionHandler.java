@@ -7,6 +7,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -76,6 +77,17 @@ public class GlobalExceptionHandler {
         return Result.error(ex.getResultEnum());
     }
 
+
+    /**
+     * Spring Security 权限不足异常
+     * 处理方法级安全 (@PreAuthorize) 抛出的权限拒绝异常
+     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Result<String> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+        log.warn("权限验证失败: {}", ex.getMessage());
+        return Result.error(ResultEnum.FORBIDDEN);
+    }
 
     /**
      *

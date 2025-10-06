@@ -25,6 +25,7 @@ import java.util.List;
 @RequestMapping("/admin/ai/dream-config")
 @RequiredArgsConstructor
 @Tag(name = "AI梦境解析配置管理接口")
+@PreAuthorize("hasAuthority('system:ai:config')")
 public class AIDreamConfigController {
 
     private final AIDreamConfigService dreamConfigService;

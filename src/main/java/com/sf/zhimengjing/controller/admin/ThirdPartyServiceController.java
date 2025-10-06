@@ -23,6 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/admin/system/third-party")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('system:sys:config')")
 @Tag(name = "第三方服务配置", description = "第三方服务配置相关操作接口")
 public class ThirdPartyServiceController {
 

@@ -31,6 +31,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
+@PreAuthorize("hasAuthority('ops:stats:view')")
 public class MLModelController {
 
     private final MLModelService mlModelService;

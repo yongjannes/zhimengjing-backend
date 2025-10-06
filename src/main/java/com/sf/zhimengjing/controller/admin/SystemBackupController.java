@@ -25,6 +25,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin/system/backups")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('system:sys:config')")
 @Tag(name = "系统备份管理", description = "系统备份相关操作接口")
 public class SystemBackupController {
 

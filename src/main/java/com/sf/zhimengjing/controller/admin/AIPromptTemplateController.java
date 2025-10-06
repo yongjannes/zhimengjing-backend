@@ -31,6 +31,7 @@ import java.util.Map;
 @RequestMapping("/admin/ai/prompt-template")
 @RequiredArgsConstructor
 @Tag(name = "AI提示词模板管理接口")
+@PreAuthorize("hasAuthority('system:ai:config')")
 public class AIPromptTemplateController {
 
     private final AIPromptTemplateService templateService;

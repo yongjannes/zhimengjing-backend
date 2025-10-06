@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -42,6 +43,7 @@ public class UserController {
      */
     @GetMapping("/list")
     @Operation(summary = "分页查询用户列表")
+    @PreAuthorize("hasAuthority('user:normal:view')")
     @Log(module = "用户管理", operation = "查询用户列表")
     public Result<IPage<UserListVO>> pageUsers(@Valid UserQueryDTO userQueryDTO) {
         IPage<UserListVO> result = userService.pageUsers(userQueryDTO);
@@ -56,6 +58,7 @@ public class UserController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "获取用户详情")
+    @PreAuthorize("hasAuthority('user:normal:view')")
     @Log(module = "用户管理", operation = "获取用户详情")
     public Result<UserDetailVO> getUserDetail(@PathVariable Long id) {
         UserDetailVO result = userService.getUserDetail(id);
@@ -71,6 +74,7 @@ public class UserController {
      */
     @PutMapping("/{id}/status")
     @Operation(summary = "更新用户状态")
+    @PreAuthorize("hasAuthority('user:normal:edit')")
     @Log(module = "用户管理", operation = "更新用户状态")
     public Result<String> updateUserStatus(@PathVariable Long id, @RequestParam Integer status) {
         userService.updateUserStatus(id, status);
@@ -86,6 +90,7 @@ public class UserController {
      */
     @PutMapping("/batch/status")
     @Operation(summary = "批量更新用户状态")
+    @PreAuthorize("hasAuthority('user:normal:edit')")
     @Log(module = "用户管理", operation = "批量更新用户状态")
     public Result<String> batchUpdateUserStatus(@RequestBody List<Long> userIds, @RequestParam Integer status) {
         userService.batchUpdateUserStatus(userIds, status);
@@ -101,6 +106,7 @@ public class UserController {
     @DeleteMapping("/{ids}")
     @Operation(summary = "删除用户")
     @Log(module = "用户管理", operation = "删除用户")
+    @PreAuthorize("hasAuthority('user:normal:delete')")
     public Result<String> deleteUsers(@PathVariable String ids) {
         userService.deleteUsers(ids);
         return Result.success("删除成功");
@@ -112,6 +118,7 @@ public class UserController {
      * @return UserStatisticsVO 封装好的用户统计信息对象
      */
     @GetMapping("/statistics")
+    @PreAuthorize("hasAuthority('user:normal:view')")
     @Operation(summary = "获取用户统计信息")
     @Log(module = "用户管理", operation = "获取用户统计")
     public Result<UserStatisticsVO> getUserStatistics() {
@@ -129,6 +136,7 @@ public class UserController {
     @GetMapping("/export")
     @Operation(summary = "导出用户数据")
     @Log(module = "用户管理", operation = "导出用户数据")
+    @PreAuthorize("hasAuthority('user:normal:view')")
     public void exportUsers(UserQueryDTO userQueryDTO, HttpServletResponse response) {
         userService.exportUsers(userQueryDTO, response);
     }
@@ -143,6 +151,7 @@ public class UserController {
     @GetMapping("/growth-trend")
     @Operation(summary = "获取用户增长趋势")
     @Log(module = "用户管理", operation = "获取用户增长趋势")
+    @PreAuthorize("hasAuthority('user:normal:view')")
     public Result<List<UserGrowthTrendVO>> getUserGrowthTrend(
             @RequestParam LocalDateTime startTime,
             @RequestParam LocalDateTime endTime) {
@@ -160,6 +169,7 @@ public class UserController {
     @PutMapping("/{id}")
     @Operation(summary = "更新普通用户信息")
     @Log(module = "用户管理", operation = "更新用户信息")
+    @PreAuthorize("hasAuthority('user:normal:edit')")
     public void updateUser(@PathVariable Long id, @RequestBody User user) {
         user.setId(id);
         userService.updateUserInfo(user);
@@ -174,6 +184,7 @@ public class UserController {
      */
     @GetMapping("/{id}/basic")
     @Operation(summary = "获取用户基本信息")
+    @PreAuthorize("hasAuthority('user:normal:view')")
     @Log(module = "用户管理", operation = "获取用户基本信息")
     public User getUserBasic(@PathVariable Long id) {
         return userService.getUserBasicInfo(id);

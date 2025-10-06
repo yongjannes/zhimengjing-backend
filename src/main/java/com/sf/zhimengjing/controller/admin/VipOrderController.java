@@ -28,6 +28,7 @@ import java.util.Map;
 @RequestMapping("/api/vip/orders")
 @RequiredArgsConstructor
 @Tag(name = "VIP订单管理接口")
+@PreAuthorize("hasAuthority('ops:vip:manage')")
 public class VipOrderController {
 
     private final VipOrderService vipOrderService;

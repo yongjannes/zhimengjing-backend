@@ -24,6 +24,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin/system/settings")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('system:sys:config')")
 @Tag(name = "系统设置管理", description = "系统配置相关操作接口")
 public class SystemSettingController {
 

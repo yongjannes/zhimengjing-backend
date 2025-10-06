@@ -27,6 +27,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin/system/logs")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('system:sys:config')")
 @Tag(name = "系统日志管理", description = "系统日志相关操作接口")
 public class SystemLogController {
 
