@@ -1,11 +1,15 @@
 package com.sf.zhimengjing.service.admin.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sf.zhimengjing.common.exception.GeneralBusinessException;
 import com.sf.zhimengjing.common.model.dto.AdminRoleDTO;
+import com.sf.zhimengjing.common.model.dto.AdminRoleQueryDTO;
+import com.sf.zhimengjing.common.model.vo.OptionVO;
 import com.sf.zhimengjing.entity.admin.AdminRole;
 import com.sf.zhimengjing.entity.admin.AdminUser;
 import com.sf.zhimengjing.mapper.admin.AdminRoleMapper;
@@ -15,8 +19,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @Title: AdminRoleServiceImpl
@@ -32,8 +38,13 @@ public class AdminRoleServiceImpl extends ServiceImpl<AdminRoleMapper, AdminRole
     private final ObjectMapper objectMapper;
 
     @Override
-    public List<AdminRole> getRoleList() {
-        return adminRoleMapper.selectList(null);
+    public Page<AdminRole> getRoleListByPage(AdminRoleQueryDTO queryDTO) {
+        Page<AdminRole> page = new Page<>(queryDTO.getPageNum(), queryDTO.getPageSize());
+        LambdaQueryWrapper<AdminRole> queryWrapper = new LambdaQueryWrapper<AdminRole>()
+                .like(StrUtil.isNotBlank(queryDTO.getRoleName()), AdminRole::getRoleName, queryDTO.getRoleName())
+                .eq(queryDTO.getStatus() != null, AdminRole::getStatus, queryDTO.getStatus())
+                .orderByDesc(AdminRole::getIsSystem);
+        return adminRoleMapper.selectPage(page, queryWrapper);
     }
 
     @Override
@@ -69,19 +80,58 @@ public class AdminRoleServiceImpl extends ServiceImpl<AdminRoleMapper, AdminRole
     }
 
     @Override
-    public void deleteRole(Long roleId) {
-        // 检查是否有用户正在使用该角色
-        Long userCount = adminUserMapper.selectCount(new LambdaQueryWrapper<AdminUser>().eq(AdminUser::getRoleId, roleId));
-        if (userCount > 0) {
-            throw new GeneralBusinessException("无法删除，仍有用户在使用该角色");
-        }
-        // 系统内置角色不允许删除
-        AdminRole adminRole = adminRoleMapper.selectById(roleId);
-        if (adminRole != null && Objects.equals(adminRole.getIsSystem(), 1)) {
-            throw new GeneralBusinessException("系统内置角色不允许删除");
+    public void deleteRoles(String ids) {
+        if (StrUtil.isBlank(ids)) {
+            throw new GeneralBusinessException("请选择要删除的角色");
         }
 
-        adminRoleMapper.deleteById(roleId);
+        List<Long> roleIds = Arrays.stream(ids.split(","))
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+
+        for (Long roleId : roleIds) {
+            AdminRole adminRole = adminRoleMapper.selectById(roleId);
+            // 检查1：角色是否存在
+            if (adminRole == null) {
+                // 如果角色本身就不存在，直接抛出异常
+                throw new GeneralBusinessException("操作失败，角色ID: " + roleId + " 不存在");
+            }
+            // 检查2：是否为系统角色
+            if (Objects.equals(adminRole.getIsSystem(), 1)) {
+                throw new GeneralBusinessException("系统内置角色 '"+ adminRole.getRoleName() +"' 不允许删除");
+            }
+            // 检查3：是否仍被用户使用
+            Long userCount = adminUserMapper.selectCount(new LambdaQueryWrapper<AdminUser>().eq(AdminUser::getRoleId, roleId));
+            if (userCount > 0) {
+                throw new GeneralBusinessException("角色 '"+ adminRole.getRoleName() +"' 仍有用户在使用，无法删除");
+            }
+        }
+
+        int deletedCount = adminRoleMapper.deleteBatchIds(roleIds);
+
+        if (deletedCount == 0) {
+            throw new GeneralBusinessException("删除失败，可能角色已被删除，请刷新页面");
+        }
+    }
+
+    /**
+     * 根据ID获取角色详情
+     *
+     * @param roleId 角色ID
+     * @return 角色详情
+     */
+    @Override
+    public AdminRole getRoleById(Long roleId) {
+        AdminRole role = adminRoleMapper.selectById(roleId);
+        if (role == null) {
+            throw new GeneralBusinessException("角色不存在");
+        }
+        return role;
+    }
+
+    @Override
+    public List<OptionVO> getRoleCodeOptions() {
+        return this.baseMapper.getRoleCodeOptions();
     }
 
     /**

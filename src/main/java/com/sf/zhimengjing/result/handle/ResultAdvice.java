@@ -61,7 +61,7 @@ public class ResultAdvice implements ResponseBodyAdvice<Object> {
                 response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
                 return JSONUtil.toJsonStr(Result.success(null));
             }
-            return null;
+            return Result.success();
         }
 
         // 2. 如果响应体已经是 Result 类型，直接返回，避免重复包装

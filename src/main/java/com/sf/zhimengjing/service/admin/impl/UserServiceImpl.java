@@ -1,5 +1,6 @@
 package com.sf.zhimengjing.service.admin.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -200,71 +202,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
-     * 删除单个用户（逻辑删除）
+     * 删除用户（逻辑删除），支持批量
      *
-     * 根据用户ID对用户进行逻辑删除（将 deleteFlag 设置为 1）。
-     * 如果用户不存在或已删除，则抛出业务异常。
-     *
-     * @param userId 用户ID
-     * @throws GeneralBusinessException 当用户不存在或已删除时抛出异常
+     * @param ids 逗号分隔的用户ID字符串
      */
-    @Override
-    @Transactional
-    public void deleteUser(Long userId) {
-        // 根据用户ID查询用户实体
-        User user = this.getById(userId);
-
-        // 校验用户是否存在或已删除
-        if (user == null || user.getDeleteFlag() == 1) {
-            throw new GeneralBusinessException("用户不存在");
-        }
-
-        // 设置逻辑删除标志
-        user.setDeleteFlag(1);
-        // 更新修改时间为当前时间
-        user.setUpdateTime(LocalDateTime.now());
-        // 将修改后的用户实体更新到数据库
-        this.updateById(user);
-    }
-
     /**
-     * 批量删除用户（逻辑删除）
+     * 删除用户（逻辑删除），支持批量
      *
-     * 根据传入的用户ID列表，将对应用户进行逻辑删除（将 deleteFlag 设置为 1）。
-     * 只操作未删除的有效用户，如果列表为空或没有找到有效用户，则抛出业务异常。
-     *
-     * @param userIds 用户ID列表
-     * @throws GeneralBusinessException 当用户ID列表为空或没有找到有效用户时抛出异常
+     * @param ids 逗号分隔的用户ID字符串
      */
     @Override
     @Transactional
-    public void batchDeleteUsers(List<Long> userIds) {
-        // 校验用户ID列表是否为空
-        if (userIds == null || userIds.isEmpty()) {
-            throw new GeneralBusinessException("用户ID列表不能为空");
+    public void deleteUsers(String ids) {
+        if (StrUtil.isBlank(ids)) {
+            throw new GeneralBusinessException("请选择要删除的用户");
         }
 
-        // 构建查询条件，只查询列表中指定的用户且未删除的用户
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<User>()
-                .in(User::getId, userIds)        // 用户ID在列表中
-                .eq(User::getDeleteFlag, 0);     // 未删除
+        List<Long> userIds = Arrays.stream(ids.split(","))
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
 
-        // 执行查询，获取符合条件的用户列表
-        List<User> users = this.list(queryWrapper);
-
-        // 如果没有找到有效用户，则抛出异常
-        if (users.isEmpty()) {
-            throw new GeneralBusinessException("没有找到有效的用户");
+        // 使用 Mybatis-Plus 的 removeByIds 进行逻辑删除
+        boolean result = this.removeByIds(userIds);
+        if (!result) {
+            throw new GeneralBusinessException("删除失败，请刷新后重试");
         }
-
-        // 遍历用户列表，设置逻辑删除标志并更新时间
-        users.forEach(user -> {
-            user.setDeleteFlag(1);                // 设置删除标志
-            user.setUpdateTime(LocalDateTime.now()); // 更新时间
-        });
-
-        // 批量更新用户信息到数据库
-        this.updateBatchById(users);
     }
 
     /**
@@ -410,6 +372,61 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return userMapper.getUserGrowthTrend(startTime, endTime);
     }
 
+    /**
+     * 更新普通用户信息
+     *
+     * @param user 用户信息
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateUserInfo(User user) {
+        // 1. 检查用户是否存在
+        User existUser = this.getById(user.getId());
+        if (existUser == null || existUser.getDeleteFlag() == 1) {
+            throw new GeneralBusinessException("用户不存在");
+        }
+
+        // 2. 更新用户信息（密码等敏感信息不允许通过此接口修改）
+        user.setPassword(null); // 防止密码被修改
+        user.setDeleteFlag(null); // 防止删除标记被修改
+        user.setCreateTime(null); // 防止创建时间被修改
+        user.setUpdateTime(LocalDateTime.now());
+
+        // 3. 执行更新
+        int result = userMapper.updateById(user);
+        if (result <= 0) {
+            throw new GeneralBusinessException("用户信息更新失败");
+        }
+    }
+
+    /**
+     * 根据ID获取用户基本信息（用于编辑表单，清除敏感信息）
+     *
+     * @param userId 用户ID
+     * @return User实体（不含敏感信息）
+     */
+
+    @Override
+    public User getUserBasicInfo(Long userId) {
+        // 1. 根据用户ID查询用户实体
+        User user = this.getById(userId);
+
+        // 2. 如果用户不存在或者已删除，抛出业务异常
+        if (user == null || user.getDeleteFlag() == 1) {
+            throw new GeneralBusinessException("用户不存在");
+        }
+
+        // 3. 清空敏感信息
+        user.setPassword(null);
+        user.setVerifiedCard(null); // 身份证号
+        user.setWechatOpenid(null);
+        user.setWechatUnionid(null);
+        user.setQqOpenid(null);
+        user.setWeiboUid(null);
+
+        // 4. 返回用户信息
+        return user;
+    }
 
 
     /**

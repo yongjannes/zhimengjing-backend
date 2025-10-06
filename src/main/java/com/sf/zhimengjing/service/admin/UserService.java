@@ -6,6 +6,7 @@ import com.sf.zhimengjing.common.model.vo.UserDetailVO;
 import com.sf.zhimengjing.common.model.vo.UserGrowthTrendVO;
 import com.sf.zhimengjing.common.model.vo.UserListVO;
 import com.sf.zhimengjing.common.model.vo.UserStatisticsVO;
+import com.sf.zhimengjing.entity.User;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.time.LocalDateTime;
@@ -52,19 +53,11 @@ public interface UserService {
     void batchUpdateUserStatus(List<Long> userIds, Integer status);
 
     /**
-     * 删除用户
+     * 删除用户（支持批量）
      *
-     * @param userId 用户ID
+     * @param ids 用户ID字符串，多个用逗号分隔
      */
-    void deleteUser(Long userId);
-
-    /**
-     * 批量删除用户
-     *
-     * @param userIds 用户ID列表
-     */
-    void batchDeleteUsers(List<Long> userIds);
-
+    void deleteUsers(String ids);
     /**
      * 获取用户统计信息
      *
@@ -93,4 +86,17 @@ public interface UserService {
      */
     List<UserGrowthTrendVO> getUserGrowthTrend(
             LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * 更新普通用户信息
+     * @param user 用户信息
+     */
+    void updateUserInfo(User user);
+
+    /**
+     * 根据ID获取用户基本信息（用于编辑表单，清除敏感信息）
+     * @param userId 用户ID
+     * @return User实体（不含敏感信息）
+     */
+    User getUserBasicInfo(Long userId);
 }

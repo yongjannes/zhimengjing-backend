@@ -1,11 +1,11 @@
 package com.sf.zhimengjing.entity;
 
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -40,7 +40,7 @@ public class User extends BaseEntity {
     private Integer gender;
 
     /** 生日 */
-    private LocalDate birthday;
+    private LocalDateTime birthday;
 
     /** 省份 */
     private String province;
@@ -124,6 +124,7 @@ public class User extends BaseEntity {
     private String weiboUid;
 
     /** 删除标记:0-正常,1-已删除 */
+    @TableLogic
     private Integer deleteFlag;
 
     /** 创建人ID */

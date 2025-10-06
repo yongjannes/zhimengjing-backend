@@ -2,20 +2,21 @@ package com.sf.zhimengjing.controller.admin;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.sf.zhimengjing.common.annotation.Log;
-import com.sf.zhimengjing.common.result.Result;
 import com.sf.zhimengjing.common.model.dto.UserQueryDTO;
 import com.sf.zhimengjing.common.model.vo.UserDetailVO;
 import com.sf.zhimengjing.common.model.vo.UserGrowthTrendVO;
 import com.sf.zhimengjing.common.model.vo.UserListVO;
 import com.sf.zhimengjing.common.model.vo.UserStatisticsVO;
+import com.sf.zhimengjing.common.result.Result;
+import com.sf.zhimengjing.entity.User;
 import com.sf.zhimengjing.service.admin.UserService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -92,31 +93,17 @@ public class UserController {
     }
 
     /**
-     * 删除用户
+     * 删除用户 (支持批量)
      *
-     * @param id 用户ID
+     * @param ids 用户ID，多个用逗号分隔
      * @return 操作结果提示
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{ids}")
     @Operation(summary = "删除用户")
     @Log(module = "用户管理", operation = "删除用户")
-    public Result<String> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+    public Result<String> deleteUsers(@PathVariable String ids) {
+        userService.deleteUsers(ids);
         return Result.success("删除成功");
-    }
-
-    /**
-     * 批量删除用户
-     *
-     * @param userIds 用户ID列表
-     * @return 操作结果提示
-     */
-    @DeleteMapping("/batch")
-    @Operation(summary = "批量删除用户")
-    @Log(module = "用户管理", operation = "批量删除用户")
-    public Result<String> batchDeleteUsers(@RequestBody List<Long> userIds) {
-        userService.batchDeleteUsers(userIds);
-        return Result.success("批量删除成功");
     }
 
     /**
@@ -161,5 +148,34 @@ public class UserController {
             @RequestParam LocalDateTime endTime) {
         List<UserGrowthTrendVO> result = userService.getUserGrowthTrend(startTime, endTime);
         return Result.success(result);
+    }
+
+    /**
+     * 更新普通用户信息
+     * 返回 void，ResultAdvice 会自动封装为 Result.success()
+     *
+     * @param id 用户ID
+     * @param user 用户信息
+     */
+    @PutMapping("/{id}")
+    @Operation(summary = "更新普通用户信息")
+    @Log(module = "用户管理", operation = "更新用户信息")
+    public void updateUser(@PathVariable Long id, @RequestBody User user) {
+        user.setId(id);
+        userService.updateUserInfo(user);
+    }
+
+    /**
+     * 根据ID获取用户基本信息（用于编辑表单）
+     * 直接返回 User 对象，ResultAdvice 会自动封装为 Result.success(user)
+     *
+     * @param id 用户ID
+     * @return User实体（不含敏感信息）
+     */
+    @GetMapping("/{id}/basic")
+    @Operation(summary = "获取用户基本信息")
+    @Log(module = "用户管理", operation = "获取用户基本信息")
+    public User getUserBasic(@PathVariable Long id) {
+        return userService.getUserBasicInfo(id);
     }
 }

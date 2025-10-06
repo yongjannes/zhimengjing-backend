@@ -1,5 +1,6 @@
 package com.sf.zhimengjing.entity.admin;
 
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.sf.zhimengjing.entity.BaseEntity;
 import lombok.Data;
@@ -49,4 +50,11 @@ public class AdminRole extends BaseEntity {
      * 角色状态（0:禁用，1:启用）
      */
     private Integer status;
+
+    /**
+     * 逻辑删除标识 (0: 未删除, 1: 已删除)
+     * 新增字段
+     */
+    @TableLogic
+    private Integer deleted;
 }

@@ -1,5 +1,6 @@
 package com.sf.zhimengjing.service.admin.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -14,6 +15,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @Title: AdminUserServiceImpl
@@ -130,28 +135,39 @@ public class AdminUserServiceImpl implements AdminUserService {
      * 删除后台管理员 (逻辑删除)
      * 将用户状态设置为0 (禁用)，并记录操作人ID。
      *
-     * @param id         被删除管理员ID
+     * @param ids         逗号分隔的管理员ID字符串
      * @param operatorId 操作人ID
      */
     @Override
-    public void deleteAdminUser(Long id, Long operatorId) {
-        if (id.equals(operatorId)) {
-            throw new GeneralBusinessException("不允许删除自己");
-        }
-        if (id == 1L) {
-            throw new GeneralBusinessException("不允许删除超级管理员");
+    public void deleteAdminUsers(String ids, Long operatorId) {
+        if (StrUtil.isBlank(ids)) {
+            throw new GeneralBusinessException("请选择要删除的管理员");
         }
 
-        AdminUser adminUser = adminUserMapper.selectById(id);
-        if (adminUser == null) {
-            throw new GeneralBusinessException("管理员不存在");
+        List<Long> userIds = Arrays.stream(ids.split(","))
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+
+        for (Long userId : userIds) {
+            if (userId.equals(operatorId)) {
+                throw new GeneralBusinessException("不允许删除自己");
+            }
+            if (userId == 1L) {
+                throw new GeneralBusinessException("不允许删除超级管理员");
+            }
+
+            AdminUser adminUser = adminUserMapper.selectById(userId);
+            if (adminUser == null) {
+                throw new GeneralBusinessException("管理员ID: " + userId + " 不存在，删除失败");
+            }
         }
 
-        int result = adminUserMapper.deleteById(id);
-        if (result == 0) {
-            throw new GeneralBusinessException("管理员不存在，删除失败");
-        }
+        // 使用 MyBatis-Plus 的 deleteBatchIds 方法进行批量逻辑删除
+        int deletedCount = adminUserMapper.deleteBatchIds(userIds);
 
+        if (deletedCount == 0) {
+            throw new GeneralBusinessException("删除失败，可能管理员已被他人删除，请刷新页面");
+        }
     }
 
     /**

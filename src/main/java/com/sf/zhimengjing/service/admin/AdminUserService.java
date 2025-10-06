@@ -41,10 +41,10 @@ public interface AdminUserService {
     /**
      * 删除后台管理员
      *
-     * @param id         管理员ID，即要被删除的管理员
+     * @param ids         逗号分隔的管理员ID字符串
      * @param operatorId 操作人ID，即执行删除操作的管理员
      */
-    void deleteAdminUser(Long id, Long operatorId);
+    void deleteAdminUsers(String ids, Long operatorId);
 
     /**
      *根据ID获取管理员用户详情

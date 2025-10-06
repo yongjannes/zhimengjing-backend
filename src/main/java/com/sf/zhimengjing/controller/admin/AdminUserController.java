@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -81,20 +82,19 @@ public class AdminUserController {
 
     /**
      * 删除后台管理员 (逻辑删除)
-     * <p>
      * 将管理员状态置为禁用，并记录操作人ID
      *
-     * @param id 被删除管理员ID
-     * @return Result<String> 删除结果信息
+     * @param ids 被逗号分隔的管理员ID字符串
      */
-    @DeleteMapping("/{id}")
-    @Operation(summary = "删除后台管理员")
+    @DeleteMapping("/{ids}")
+    @Operation(summary = "删除后台管理员 (支持批量)")
     @Log(module = "管理员管理", operation = "删除管理员")
-    public Result<String> deleteAdminUser(@PathVariable Long id) {
+    @PreAuthorize("hasAuthority('system:user:delete')")
+    public Result<String> deleteAdminUser(@PathVariable String ids) {
         String operatorIdStr = SecurityContextHolder.getContext().getAuthentication().getName();
         Long operatorId = Long.parseLong(operatorIdStr);
 
-        adminUserService.deleteAdminUser(id, operatorId);
+        adminUserService.deleteAdminUsers(ids, operatorId);
         return Result.success("删除成功");
     }
 
