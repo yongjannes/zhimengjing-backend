@@ -1,8 +1,8 @@
 package com.sf.zhimengjing.service.admin.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.sf.zhimengjing.common.model.dto.DreamAuditDTO;
 import com.sf.zhimengjing.common.model.dto.DreamQueryDTO;
 import com.sf.zhimengjing.common.model.vo.DreamListVO;
 import com.sf.zhimengjing.common.model.vo.DreamStatisticsVO;
@@ -11,11 +11,11 @@ import com.sf.zhimengjing.mapper.admin.DreamRecordMapper;
 import com.sf.zhimengjing.service.admin.DreamManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
+import java.util.List;
 
 /**
  * @Title: DreamManagementServiceImpl
@@ -37,26 +37,8 @@ public class DreamManagementServiceImpl implements DreamManagementService {
      */
     @Override
     public IPage<DreamListVO> pageDreams(DreamQueryDTO dto) {
-        // 构建查询条件
-        LambdaQueryWrapper<DreamRecord> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.like(StringUtils.hasText(dto.getTitle()), DreamRecord::getTitle, dto.getTitle());
-        queryWrapper.eq(dto.getCategoryId() != null, DreamRecord::getCategoryId, dto.getCategoryId());
-        queryWrapper.eq(dto.getStatus() != null, DreamRecord::getStatus, dto.getStatus());
-        queryWrapper.ge(dto.getDreamDateStart() != null, DreamRecord::getDreamDate, dto.getDreamDateStart());
-        queryWrapper.le(dto.getDreamDateEnd() != null, DreamRecord::getDreamDate, dto.getDreamDateEnd());
-        queryWrapper.orderByDesc(DreamRecord::getCreateTime);
-
-        // 创建分页对象
-        Page<DreamRecord> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-        IPage<DreamRecord> dreamPage = dreamRecordMapper.selectPage(page, queryWrapper);
-
-        // 转换为VO对象
-        Page<DreamListVO> voPage = new Page<>(dreamPage.getCurrent(), dreamPage.getSize(), dreamPage.getTotal());
-        voPage.setRecords(dreamPage.getRecords().stream()
-                .map(this::convertToDreamListVO)
-                .collect(Collectors.toList()));
-
-        return voPage;
+        Page<DreamListVO> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+        return dreamRecordMapper.selectDreamListPage(page, dto);
     }
 
     /**
@@ -65,47 +47,46 @@ public class DreamManagementServiceImpl implements DreamManagementService {
      */
     @Override
     public DreamStatisticsVO getDreamStatistics() {
-        DreamStatisticsVO vo = new DreamStatisticsVO();
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-
-        // 总梦境数
-        vo.setTotalDreams(dreamRecordMapper.selectCount(
-                new LambdaQueryWrapper<DreamRecord>().eq(DreamRecord::getDeleteFlag, 0)));
-
-        // 各状态梦境数
-        vo.setPendingDreams(dreamRecordMapper.selectCount(
-                new LambdaQueryWrapper<DreamRecord>().eq(DreamRecord::getStatus, 2)
-                        .eq(DreamRecord::getDeleteFlag, 0)));
-        vo.setApprovedDreams(dreamRecordMapper.selectCount(
-                new LambdaQueryWrapper<DreamRecord>().eq(DreamRecord::getStatus, 3)
-                        .eq(DreamRecord::getDeleteFlag, 0)));
-        vo.setRejectedDreams(dreamRecordMapper.selectCount(
-                new LambdaQueryWrapper<DreamRecord>().eq(DreamRecord::getStatus, 4)
-                        .eq(DreamRecord::getDeleteFlag, 0)));
-
-        // 公开梦境数
-        vo.setPublicDreams(dreamRecordMapper.selectCount(
-                new LambdaQueryWrapper<DreamRecord>().eq(DreamRecord::getIsPublic, 1)
-                        .eq(DreamRecord::getDeleteFlag, 0)));
-
-        // 今日新增梦境数
-        vo.setTodayNewDreams(dreamRecordMapper.selectCount(
-                new LambdaQueryWrapper<DreamRecord>().ge(DreamRecord::getCreateTime, todayStart)
-                        .eq(DreamRecord::getDeleteFlag, 0)));
-
-        // 本周新增梦境数
         LocalDateTime weekStart = todayStart.minusDays(todayStart.getDayOfWeek().getValue() - 1);
-        vo.setWeekNewDreams(dreamRecordMapper.selectCount(
-                new LambdaQueryWrapper<DreamRecord>().ge(DreamRecord::getCreateTime, weekStart)
-                        .eq(DreamRecord::getDeleteFlag, 0)));
-
-        // 本月新增梦境数
         LocalDateTime monthStart = todayStart.withDayOfMonth(1);
-        vo.setMonthNewDreams(dreamRecordMapper.selectCount(
-                new LambdaQueryWrapper<DreamRecord>().ge(DreamRecord::getCreateTime, monthStart)
-                        .eq(DreamRecord::getDeleteFlag, 0)));
 
-        return vo;
+        return dreamRecordMapper.selectDreamStatistics(todayStart, weekStart, monthStart);
+    }
+
+    @Override
+    public DreamRecord getDreamDetail(Long id) {
+        return dreamRecordMapper.selectById(id);
+    }
+
+    /**
+     * 审核梦境
+     * @param auditDTO 梦境审核信息
+     */
+    @Override
+    @Transactional
+    public void auditDreams(DreamAuditDTO auditDTO) {
+        for (Long dreamId : auditDTO.getDreamIds()) {
+            DreamRecord dream = new DreamRecord();
+            dream.setId(dreamId);
+            dream.setStatus(auditDTO.getStatus());
+            dream.setReviewNotes(auditDTO.getReviewNotes());
+            dream.setReviewedAt(LocalDateTime.now());
+
+            if (auditDTO.getStatus() == 4 && auditDTO.getRejectReason() != null) {
+                dream.setReviewNotes(auditDTO.getRejectReason());
+            }
+
+            dreamRecordMapper.updateById(dream);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteDreams(List<Long> dreamIds) {
+        if (dreamIds != null && !dreamIds.isEmpty()) {
+            dreamRecordMapper.deleteBatchIds(dreamIds);
+        }
     }
 
     /**

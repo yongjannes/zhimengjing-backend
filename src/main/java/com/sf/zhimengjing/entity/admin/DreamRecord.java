@@ -1,5 +1,6 @@
 package com.sf.zhimengjing.entity.admin;
 
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.sf.zhimengjing.entity.BaseEntity;
 import lombok.Data;
@@ -83,5 +84,6 @@ public class DreamRecord extends BaseEntity {
     private Integer isAnonymous;
 
     /** 删除标记（0-未删除，1-已删除） */
+    @TableLogic
     private Integer deleteFlag;
 }

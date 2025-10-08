@@ -1,9 +1,13 @@
 package com.sf.zhimengjing.service.admin;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.sf.zhimengjing.common.model.dto.DreamAuditDTO;
 import com.sf.zhimengjing.common.model.dto.DreamQueryDTO;
 import com.sf.zhimengjing.common.model.vo.DreamListVO;
 import com.sf.zhimengjing.common.model.vo.DreamStatisticsVO;
+import com.sf.zhimengjing.entity.admin.DreamRecord;
+
+import java.util.List;
 
 /**
  * @Title: DreamManagementService
@@ -25,4 +29,23 @@ public interface DreamManagementService {
      * @return DreamStatisticsVO对象，包含总梦境数、审核状态统计、公开梦境数及新增梦境数等
      */
     DreamStatisticsVO getDreamStatistics();
+
+    /**
+     * 获取梦境详情
+     * @param id 梦境ID
+     * @return 梦境详情
+     */
+    DreamRecord getDreamDetail(Long id);
+
+    /**
+     * 审核梦境
+     * @param auditDTO
+     */
+    void auditDreams(DreamAuditDTO auditDTO);
+
+    /**
+     * 删除梦境
+     * @param dreamIds
+     */
+    void deleteDreams(List<Long> dreamIds);
 }

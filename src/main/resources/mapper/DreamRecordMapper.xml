@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.sf.zhimengjing.mapper.admin.DreamRecordMapper">
+
+    <resultMap id="DreamListVOMap" type="com.sf.zhimengjing.common.model.vo.DreamListVO">
+        <id     property="id"           column="id"/>
+        <result property="userName"     column="userName"/>
+        <result property="title"        column="title"/>
+        <result property="categoryName" column="categoryName"/>
+        <result property="dreamDate"    column="dream_date"/>
+        <result property="isPublic"     column="isPublic"/>
+        <result property="statusText"   column="statusText"/>
+        <result property="viewCount"    column="view_count"/>
+        <result property="likeCount"    column="like_count"/>
+        <result property="createTime"   column="create_time"/>
+    </resultMap>
+
+    <select id="selectDreamListPage" resultMap="DreamListVOMap">
+        SELECT
+        dr.id,
+        au.real_name AS userName,
+        dr.title,
+        dc.name AS categoryName,
+        dr.dream_date,
+        dr.is_public AS isPublic,
+        CASE dr.status
+        WHEN 1 THEN '正常'
+        WHEN 2 THEN '审核中'
+        WHEN 3 THEN '已审核'
+        WHEN 4 THEN '已拒绝'
+        ELSE '未知'
+        END AS statusText,
+        dr.view_count,
+        dr.like_count,
+        dr.create_time
+        FROM
+        dream_records dr
+        LEFT JOIN
+        admin_users au ON dr.user_id = au.id AND au.deleted = 0
+        LEFT JOIN
+        dream_categories dc ON dr.category_id = dc.id AND dc.delete_flag = 0
+        <where>
+            dr.delete_flag = 0
+            <if test="query.userName != null and query.userName != ''">
+                AND au.real_name LIKE CONCAT('%', #{query.userName}, '%')
+            </if>
+            <if test="query.title != null and query.title != ''">
+                AND dr.title LIKE CONCAT('%', #{query.title}, '%')
+            </if>
+            <if test="query.categoryId != null">
+                AND dr.category_id = #{query.categoryId}
+            </if>
+            <if test="query.status != null">
+                AND dr.status = #{query.status}
+            </if>
+            <if test="query.dreamDateStart != null">
+                AND dr.dream_date >= #{query.dreamDateStart}
+            </if>
+            <if test="query.dreamDateEnd != null">
+                AND dr.dream_date &lt;= #{query.dreamDateEnd}
+            </if>
+        </where>
+        ORDER BY
+        dr.create_time DESC
+    </select>
+
+    <select id="selectDreamStatistics" resultType="com.sf.zhimengjing.common.model.vo.DreamStatisticsVO">
+        SELECT
+            COUNT(*) AS totalDreams,
+            COUNT(CASE WHEN `status` = 2 THEN 1 END) AS pendingDreams,
+            COUNT(CASE WHEN `status` = 3 THEN 1 END) AS approvedDreams,
+            COUNT(CASE WHEN `status` = 4 THEN 1 END) AS rejectedDreams,
+            COUNT(CASE WHEN is_public = 1 THEN 1 END) AS publicDreams,
+            COUNT(CASE WHEN create_time >= #{todayStart} THEN 1 END) AS todayNewDreams,
+            COUNT(CASE WHEN create_time >= #{weekStart} THEN 1 END) AS weekNewDreams,
+            COUNT(CASE WHEN create_time >= #{monthStart} THEN 1 END) AS monthNewDreams
+        FROM dream_records
+        WHERE delete_flag = 0
+    </select>
+
+</mapper>

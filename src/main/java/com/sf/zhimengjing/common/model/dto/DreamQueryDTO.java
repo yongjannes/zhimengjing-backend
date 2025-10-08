@@ -1,7 +1,9 @@
 package com.sf.zhimengjing.common.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -33,11 +35,13 @@ public class DreamQueryDTO {
 
     /** 梦境日期查询起始时间 */
     @Schema(description = "做梦日期开始")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dreamDateStart;
 
     /** 梦境日期查询结束时间 */
     @Schema(description = "做梦日期结束")
-    private LocalDate dreamDateEnd;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate  dreamDateEnd;
 
     /** 梦境状态: 1-正常, 2-审核中, 3-已审核, 4-已拒绝 */
     @Schema(description = "状态:1-正常,2-审核中,3-已审核,4-已拒绝")

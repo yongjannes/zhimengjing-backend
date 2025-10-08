@@ -1,7 +1,11 @@
 package com.sf.zhimengjing.common.model.vo;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +21,7 @@ import java.util.List;
 public class DreamListVO {
 
     /** 梦境ID，唯一标识一条梦境记录 */
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     @Schema(description = "梦境ID")
     private Long id;
 
@@ -34,6 +39,7 @@ public class DreamListVO {
 
     /** 梦境发生日期 */
     @Schema(description = "做梦日期")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dreamDate;
 
     /** 是否公开展示给其他用户 */
@@ -54,6 +60,7 @@ public class DreamListVO {
 
     /** 梦境记录创建时间 */
     @Schema(description = "创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
     /** 标签列表，用于描述梦境的主题或情绪等 */

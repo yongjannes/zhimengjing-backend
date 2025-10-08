@@ -168,25 +168,35 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         try {
             // 1. 根据角色ID查询角色
             AdminRole adminRole = adminRoleMapper.selectById(adminUser.getRoleId());
-            if (adminRole == null || StringUtils.isBlank(adminRole.getPermissions())) {
-                log.warn("[JWT Filter] 管理员角色不存在或无权限: userId={}, roleId={}",
+            if (adminRole == null) {
+                log.warn("[JWT Filter] 管理员角色不存在: userId={}, roleId={}",
                         adminUser.getId(), adminUser.getRoleId());
                 return Collections.emptyList();
             }
 
+            List<GrantedAuthority> authorities;
+
             // 2. 解析权限JSON字符串
-            List<String> permissions = objectMapper.readValue(
-                    adminRole.getPermissions(),
-                    new TypeReference<List<String>>() {}
-            );
+            if (StringUtils.isNotBlank(adminRole.getPermissions())) {
+                List<String> permissions = objectMapper.readValue(
+                        adminRole.getPermissions(),
+                        new TypeReference<List<String>>() {}
+                );
+                authorities = permissions.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList());
+                log.debug("[JWT Filter] 加载管理员权限成功: userId={}, roleId={}, permissions={}",
+                        adminUser.getId(), adminUser.getRoleId(), permissions);
+            } else {
+                authorities = new java.util.ArrayList<>();
+                log.warn("[JWT Filter] 管理员角色无任何权限配置: userId={}, roleId={}",
+                        adminUser.getId(), adminUser.getRoleId());
+            }
 
-            // 3. 转换为 GrantedAuthority
-            List<GrantedAuthority> authorities = permissions.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
-
-            log.debug("[JWT Filter] 加载管理员权限成功: userId={}, roleId={}, permissions={}",
-                    adminUser.getId(), adminUser.getRoleId(), permissions);
+            // 3. 添加角色作为权限，前缀为 "ROLE_"
+            if (StringUtils.isNotBlank(adminRole.getRoleCode())) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + adminRole.getRoleCode()));
+            }
 
             return authorities;
         } catch (Exception e) {
