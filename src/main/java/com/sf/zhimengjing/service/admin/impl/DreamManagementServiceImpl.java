@@ -6,8 +6,11 @@ import com.sf.zhimengjing.common.model.dto.DreamAuditDTO;
 import com.sf.zhimengjing.common.model.dto.DreamQueryDTO;
 import com.sf.zhimengjing.common.model.vo.DreamListVO;
 import com.sf.zhimengjing.common.model.vo.DreamStatisticsVO;
+import com.sf.zhimengjing.common.util.SecurityUtils;
 import com.sf.zhimengjing.entity.admin.DreamRecord;
+import com.sf.zhimengjing.entity.admin.DreamReviewLog;
 import com.sf.zhimengjing.mapper.admin.DreamRecordMapper;
+import com.sf.zhimengjing.mapper.admin.DreamReviewLogMapper;
 import com.sf.zhimengjing.service.admin.DreamManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ import java.util.List;
 public class DreamManagementServiceImpl implements DreamManagementService {
 
     private final DreamRecordMapper dreamRecordMapper;
+    private final DreamReviewLogMapper dreamReviewLogMapper;
 
     /**
      * 分页查询梦境列表
@@ -66,20 +70,44 @@ public class DreamManagementServiceImpl implements DreamManagementService {
     @Override
     @Transactional
     public void auditDreams(DreamAuditDTO auditDTO) {
+
+        Long reviewerId = SecurityUtils.getUserId();  // 当前审核管理员ID
+        LocalDateTime now = LocalDateTime.now();
+
         for (Long dreamId : auditDTO.getDreamIds()) {
+            // 查询原始状态
+            DreamRecord oldDream = dreamRecordMapper.selectById(dreamId);
+            if (oldDream == null) continue;
+
+            Integer oldStatus = oldDream.getStatus();
+
+            // === 更新 dream_record 表 ===
             DreamRecord dream = new DreamRecord();
             dream.setId(dreamId);
             dream.setStatus(auditDTO.getStatus());
             dream.setReviewNotes(auditDTO.getReviewNotes());
-            dream.setReviewedAt(LocalDateTime.now());
+            dream.setReviewedAt(now);
 
             if (auditDTO.getStatus() == 4 && auditDTO.getRejectReason() != null) {
                 dream.setReviewNotes(auditDTO.getRejectReason());
             }
 
             dreamRecordMapper.updateById(dream);
+
+            // === 新增 dream_review_logs 日志 ===
+            DreamReviewLog log = new DreamReviewLog();
+            log.setDreamId(dreamId);
+            log.setReviewerId(reviewerId);
+            log.setAction(auditDTO.getStatus() == 3 ? "APPROVE" : "REJECT");
+            log.setPreviousStatus(oldStatus);
+            log.setNewStatus(auditDTO.getStatus());
+            log.setReason(auditDTO.getStatus() == 4 ? auditDTO.getRejectReason() : auditDTO.getReviewNotes());
+            log.setCreateTime(now);
+
+            dreamReviewLogMapper.insert(log);
         }
     }
+
 
     @Override
     @Transactional

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +30,7 @@ import java.util.List;
 @RequestMapping("/admin/categories")
 @RequiredArgsConstructor
 @Tag(name = "分类管理", description = "后台梦境分类管理相关接口")
+@PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('category:manage')")
 public class CategoryManagementController {
 
     private final CategoryManagementService categoryService;
