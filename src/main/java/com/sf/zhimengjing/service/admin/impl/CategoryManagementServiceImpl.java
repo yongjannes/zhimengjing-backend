@@ -1,6 +1,7 @@
 package com.sf.zhimengjing.service.admin.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sf.zhimengjing.common.exception.GeneralBusinessException;
@@ -9,14 +10,8 @@ import com.sf.zhimengjing.common.model.dto.CategoryQueryDTO;
 import com.sf.zhimengjing.common.model.vo.CategoryStatisticsVO;
 import com.sf.zhimengjing.common.model.vo.CategoryVO;
 import com.sf.zhimengjing.common.util.BeanUtilsEx;
-import com.sf.zhimengjing.entity.admin.DreamCategory;
-import com.sf.zhimengjing.entity.admin.DreamCategoryRelation;
-import com.sf.zhimengjing.entity.admin.DreamCategoryStatistics;
-import com.sf.zhimengjing.entity.admin.DreamRecord;
-import com.sf.zhimengjing.mapper.admin.DreamCategoryMapper;
-import com.sf.zhimengjing.mapper.admin.DreamCategoryRelationMapper;
-import com.sf.zhimengjing.mapper.admin.DreamCategoryStatisticsMapper;
-import com.sf.zhimengjing.mapper.admin.DreamRecordMapper;
+import com.sf.zhimengjing.entity.admin.*;
+import com.sf.zhimengjing.mapper.admin.*;
 import com.sf.zhimengjing.service.admin.CategoryManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -30,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -47,6 +43,7 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
     private final DreamCategoryRelationMapper relationMapper;
     private final DreamCategoryStatisticsMapper statisticsMapper;
     private final DreamRecordMapper recordMapper;
+    private final DreamCategoryAttributeMapper attributeMapper;
 
     /**
      * 分页查询分类列表
@@ -72,7 +69,7 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
                 .eq(DreamCategory::getIsActive, true)
                 .orderByAsc(DreamCategory::getSortOrder);
         List<DreamCategory> allCategories = categoryMapper.selectList(queryWrapper);
-        return buildTree(allCategories, 0, 1, maxDepth);
+        return buildTree(allCategories, 0L, 1, maxDepth);
     }
 
     /**
@@ -84,7 +81,15 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
         if (category == null) {
             throw new GeneralBusinessException("分类不存在");
         }
-        return convertToCategoryVO(category);
+        CategoryVO vo = convertToCategoryVO(category);
+
+        // 新增逻辑：查询并设置关联的属性
+        List<DreamCategoryAttribute> attributes = attributeMapper.selectList(
+                new LambdaQueryWrapper<DreamCategoryAttribute>().eq(DreamCategoryAttribute::getCategoryId, categoryId)
+        );
+        vo.setAttributes(attributes);
+
+        return vo;
     }
 
     /**
@@ -100,6 +105,12 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
         category.setUpdatedBy(creatorId);
         category.setLevel(calculateCategoryLevel(category.getParentId()));
         categoryMapper.insert(category);
+
+        if (category.getParentId() != null && category.getParentId() > 0) {
+            categoryMapper.update(null, new UpdateWrapper<DreamCategory>()
+                    .eq("id", category.getParentId())
+                    .setSql("sub_category_count = sub_category_count + 1"));
+        }
 
         createCategoryRelations(category);
 
@@ -118,23 +129,70 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
             throw new GeneralBusinessException("分类不存在");
         }
 
-        // 2. 校验分类名称唯一性
-        validateCategoryNameUnique(updateDTO.getName(), categoryId);
+        // 2. 保存旧的父ID，用于后续比较
+        Integer oldParentId = category.getParentId();
 
-        // 3. 拷贝 DTO 中非空字段到实体，保证数据库其他字段不被覆盖
+        // 3. 校验分类名称唯一性 (如果名称有变动)
+        if (updateDTO.getName() != null && !updateDTO.getName().equals(category.getName())) {
+            validateCategoryNameUnique(updateDTO.getName(), categoryId);
+        }
+
+        // 4. 拷贝 DTO 中非空字段到实体
         org.springframework.beans.BeanUtils.copyProperties(
                 updateDTO,
                 category,
                 BeanUtilsEx.getNullPropertyNames(updateDTO)
         );
 
-        // 4. 设置更新人
+        // 5. 设置更新人
         category.setUpdatedBy(updaterId);
 
-        // 5. 更新数据库
-        categoryMapper.updateById(category);
+        // 6. 检查父分类是否发生变化
+        Integer newParentId = category.getParentId();
 
-        // 6. 返回 VO 对象
+        if (!Objects.equals(oldParentId, newParentId)) {
+            // --- 父分类已改变，需要执行移动逻辑 ---
+            // 6.1 不允许移动到自身或其子分类下
+            List<DreamCategoryRelation> descendantRelations = relationMapper.selectList(
+                    new LambdaQueryWrapper<DreamCategoryRelation>().eq(DreamCategoryRelation::getAncestorId, category.getId())
+            );
+            List<Long> descendantIds = descendantRelations.stream()
+                    .map(DreamCategoryRelation::getDescendantId)
+                    .collect(Collectors.toList());
+            if (descendantIds.contains(newParentId)) {
+                throw new GeneralBusinessException("不能将分类移动到其子分类下");
+            }
+
+            // 6.2 更新层级
+            category.setLevel(calculateCategoryLevel(newParentId));
+
+            // 6.3 更新分类本身 (包括 parentId, level 等)
+            categoryMapper.updateById(category);
+
+            // 6.4 更新关系表
+            relationMapper.delete(new LambdaQueryWrapper<DreamCategoryRelation>().eq(DreamCategoryRelation::getDescendantId, categoryId));
+            createCategoryRelations(category);
+
+            // 6.5 更新新旧父分类的 sub_category_count
+            // 减少旧父分类的计数
+            if (oldParentId != null && oldParentId > 0) {
+                categoryMapper.update(null, new UpdateWrapper<DreamCategory>()
+                        .eq("id", oldParentId)
+                        .setSql("sub_category_count = sub_category_count - 1")
+                        .gt("sub_category_count", 0));
+            }
+            // 增加新父分类的计数
+            if (newParentId != null && newParentId > 0) {
+                categoryMapper.update(null, new UpdateWrapper<DreamCategory>()
+                        .eq("id", newParentId)
+                        .setSql("sub_category_count = sub_category_count + 1"));
+            }
+        } else {
+            // --- 父分类未改变，只更新分类自身信息 ---
+            categoryMapper.updateById(category);
+        }
+
+        // 7. 返回 VO 对象
         return convertToCategoryVO(category);
     }
 
@@ -144,11 +202,47 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
     @Override
     @Transactional
     public void deleteCategory(Long categoryId) {
+        // --- 新增逻辑开始 ---
+        // 1. 在删除前，先根据 ID 获取分类实体
+        // 这一步至关重要，因为我们需要知道它的父分类 ID (parentId) 是多少
+        DreamCategory categoryToDelete = categoryMapper.selectById(categoryId);
+
+        // 2. 如果分类不存在（可能已被删除），则直接返回，无需任何操作
+        if (categoryToDelete == null) {
+            return;
+        }
+        // --- 新增逻辑结束 ---
+
+        // 3. 检查是否存在子分类 (沿用原有逻辑)
         if (categoryMapper.selectCount(new LambdaQueryWrapper<DreamCategory>().eq(DreamCategory::getParentId, categoryId)) > 0) {
             throw new GeneralBusinessException("该分类下存在子分类，无法删除");
         }
+
+        // 4. 检查是否有梦境记录正在使用该分类 (沿用原有逻辑)
+        if (recordMapper.selectCount(new LambdaQueryWrapper<DreamRecord>().eq(DreamRecord::getCategoryId, categoryId)) > 0) {
+            throw new GeneralBusinessException("该分类下存在梦境记录，无法删除");
+        }
+
+        // 5. 对主分类表执行逻辑删除
         categoryMapper.deleteById(categoryId);
+
+        // 6. 对分类属性表执行逻辑删除
+        attributeMapper.delete(new LambdaQueryWrapper<DreamCategoryAttribute>().eq(DreamCategoryAttribute::getCategoryId, categoryId));
+
+        // 7. 对分类关系表执行物理删除
         relationMapper.delete(new LambdaQueryWrapper<DreamCategoryRelation>().eq(DreamCategoryRelation::getDescendantId, categoryId));
+
+        // --- 新增逻辑开始 ---
+        // 8. 检查是否存在父分类，如果存在，则将其 sub_category_count 减 1
+        if (categoryToDelete.getParentId() != null && categoryToDelete.getParentId() > 0) {
+            categoryMapper.update(
+                    null,
+                    new UpdateWrapper<DreamCategory>()
+                            .eq("id", categoryToDelete.getParentId()) // 定位到父分类
+                            .setSql("sub_category_count = sub_category_count - 1") // 执行 SQL 自减
+                            .gt("sub_category_count", 0) // 安全措施：确保计数不会变为负数
+            );
+        }
     }
 
     // ---------------- 已实现的方法 ----------------
@@ -189,7 +283,7 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
         List<DreamCategoryRelation> descendantRelations = relationMapper.selectList(
                 new LambdaQueryWrapper<DreamCategoryRelation>().eq(DreamCategoryRelation::getAncestorId, category.getId())
         );
-        List<Integer> descendantIds = descendantRelations.stream()
+        List<Long> descendantIds = descendantRelations.stream()
                 .map(DreamCategoryRelation::getDescendantId)
                 .collect(Collectors.toList());
         if (descendantIds.contains(newParentId)) {
@@ -217,7 +311,7 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
         }
         for (int i = 0; i < categoryIds.size(); i++) {
             DreamCategory category = new DreamCategory();
-            category.setId((long) Math.toIntExact(categoryIds.get(i)));
+            category.setId((long) categoryIds.get(i));
             category.setSortOrder(i);
             categoryMapper.updateById(category);
         }
@@ -331,7 +425,7 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
         );
         if (statistics == null) {
             statistics = new DreamCategoryStatistics();
-            statistics.setCategoryId((long) Math.toIntExact(categoryId));
+            statistics.setCategoryId((long) categoryId);
         }
 
         // 6. 更新统计数据
@@ -418,8 +512,8 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
      */
     private void createCategoryRelations(DreamCategory category) {
         DreamCategoryRelation selfRelation = new DreamCategoryRelation();
-        selfRelation.setAncestorId(Math.toIntExact(category.getId()));
-        selfRelation.setDescendantId(Math.toIntExact(category.getId()));
+        selfRelation.setAncestorId(category.getId());
+        selfRelation.setDescendantId(category.getId());
         selfRelation.setDistance(0);
         relationMapper.insert(selfRelation);
 
@@ -430,7 +524,7 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
             for (DreamCategoryRelation parentRelation : parentRelations) {
                 DreamCategoryRelation newRelation = new DreamCategoryRelation();
                 newRelation.setAncestorId(parentRelation.getAncestorId());
-                newRelation.setDescendantId(Math.toIntExact(category.getId()));
+                newRelation.setDescendantId(category.getId());
                 newRelation.setDistance(parentRelation.getDistance() + 1);
                 relationMapper.insert(newRelation);
             }
@@ -440,19 +534,22 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
     /**
      * 构建树形结构
      */
-    private List<CategoryVO> buildTree(List<DreamCategory> all, int parentId, int currentDepth, Integer maxDepth) {
+    private List<CategoryVO> buildTree(List<DreamCategory> all, Long parentId, int currentDepth, Integer maxDepth) {
+        // 超过最大深度返回空列表
         if (maxDepth != null && currentDepth > maxDepth) {
-            return null;
+            return Collections.emptyList();
         }
+
         return all.stream()
-                .filter(c -> c.getParentId() == parentId)
+                .filter(c -> Objects.equals(c.getParentId() == null ? 0 : c.getParentId().longValue(), parentId))
                 .map(c -> {
                     CategoryVO vo = convertToCategoryVO(c);
-                    vo.setChildren(buildTree(all, Math.toIntExact(c.getId()), currentDepth + 1, maxDepth));
+                    vo.setChildren(buildTree(all, c.getId(), currentDepth + 1, maxDepth));
                     return vo;
                 })
                 .collect(Collectors.toList());
     }
+
 
     /**
      * 转换实体到VO

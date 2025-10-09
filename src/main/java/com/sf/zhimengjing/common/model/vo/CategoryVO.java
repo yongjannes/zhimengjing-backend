@@ -1,8 +1,11 @@
 package com.sf.zhimengjing.common.model.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.sf.zhimengjing.entity.admin.DreamCategoryAttribute;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,6 +25,7 @@ public class CategoryVO {
      * 分类ID
      */
     @Schema(description = "分类ID", example = "1")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long id;
 
     /**
@@ -105,13 +109,15 @@ public class CategoryVO {
     /**
      * 创建时间
      */
-    @Schema(description = "创建时间", example = "2025-09-21T13:00:00")
+    @Schema(description = "创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    @Schema(description = "更新时间", example = "2025-09-21T15:00:00")
+    @Schema(description = "更新时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
 
     /**
@@ -119,4 +125,7 @@ public class CategoryVO {
      */
     @Schema(description = "子分类列表")
     private List<CategoryVO> children;
+
+    @Schema(description = "分类的自定义属性列表")
+    private List<DreamCategoryAttribute> attributes;
 }

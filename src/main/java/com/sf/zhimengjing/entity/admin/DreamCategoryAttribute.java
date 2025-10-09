@@ -17,7 +17,7 @@ import java.io.Serializable;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("dream_categories_attributes")
+@TableName("dream_category_attributes")
 public class DreamCategoryAttribute extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -27,7 +27,7 @@ public class DreamCategoryAttribute extends BaseEntity implements Serializable {
      * 分类ID（关联 dream_categories 表）
      */
     @TableField("category_id")
-    private Integer categoryId;
+    private Long categoryId;
 
     /**
      * 属性名称

@@ -19,7 +19,7 @@ import java.io.Serializable;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("dream_categories_relations")
+@TableName("dream_category_relations")
 public class DreamCategoryRelation extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -34,13 +34,13 @@ public class DreamCategoryRelation extends BaseEntity implements Serializable {
      * 祖先分类ID（关联 dream_categories 表）
      */
     @TableField("ancestor_id")
-    private Integer ancestorId;
+    private Long ancestorId;
 
     /**
      * 后代分类ID（关联 dream_categories 表）
      */
     @TableField("descendant_id")
-    private Integer descendantId;
+    private Long descendantId;
 
     /**
      * 距离层级（祖先到后代的层级距离，0表示自身）

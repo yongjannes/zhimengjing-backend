@@ -1,8 +1,11 @@
 package com.sf.zhimengjing.common.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * @Title: CategoryDTO
@@ -13,6 +16,7 @@ import lombok.Data;
  */
 @Data
 @Schema(description = "梦境分类创建/更新DTO")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CategoryDTO {
 
     /**
@@ -31,10 +35,9 @@ public class CategoryDTO {
     private String description;
 
     /**
-     * 分类图标URL（可选，最大长度200）
+     * 分类图标URL
      */
-    @Size(max = 200, message = "图标URL长度不能超过200字符")
-    @Schema(description = "分类图标URL", example = "https://example.com/icon.png")
+    @Schema(description = "分类图标URL")
     private String icon;
 
     /**
@@ -47,7 +50,6 @@ public class CategoryDTO {
     /**
      * 父分类ID（必填，默认0表示顶级分类）
      */
-    @NotNull(message = "父分类ID不能为空")
     @Schema(description = "父分类ID", example = "0")
     private Integer parentId = 0;
 
@@ -70,4 +72,11 @@ public class CategoryDTO {
      */
     @Schema(description = "是否系统内置分类", example = "false")
     private Boolean isSystem = false;
+
+    /**
+     * 分类的自定义属性列表
+     */
+    @Schema(description = "分类的自定义属性列表")
+    private List<CategoryAttributeDTO> attributes;
+
 }

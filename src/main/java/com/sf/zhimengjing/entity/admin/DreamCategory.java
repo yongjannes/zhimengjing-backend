@@ -1,9 +1,6 @@
 package com.sf.zhimengjing.entity.admin;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.sf.zhimengjing.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,7 +25,7 @@ public class DreamCategory extends BaseEntity implements Serializable {
     /**
      * 分类ID（主键，自增）
      */
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long  id;
 
     /**
@@ -128,4 +125,11 @@ public class DreamCategory extends BaseEntity implements Serializable {
      */
     @TableField(exist = false)
     private DreamCategoryStatistics statistics;
+
+    /**
+     * 删除标志（0-正常，1-删除）
+     */
+    @TableField("delete_flag")
+    @TableLogic
+    private Integer deleteFlag;
 }
