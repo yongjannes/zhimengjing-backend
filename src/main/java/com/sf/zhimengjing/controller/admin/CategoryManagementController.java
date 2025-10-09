@@ -85,24 +85,14 @@ public class CategoryManagementController {
     }
 
 
-    @DeleteMapping("/{categoryId}")
-    @Operation(summary = "删除分类", description = "删除分类")
+    @DeleteMapping
+    @Operation(summary = "删除分类", description = "根据ID列表删除一个或多个分类")
     @Log(module = "分类管理", operation = "删除分类")
-    public Result<String> deleteCategory(
-            @Parameter(description = "分类ID") @PathVariable Long categoryId) {
-        categoryService.deleteCategory(categoryId);
+    public Result<String> deleteCategories(
+            @Parameter(description = "分类ID列表，可包含单个或多个ID") @RequestParam("ids") List<Long> categoryIds) {
+        categoryService.deleteCategories(categoryIds);
         return Result.success("删除成功");
     }
-
-    @DeleteMapping("/batch")
-    @Operation(summary = "批量删除分类", description = "批量删除分类")
-    @Log(module = "分类管理", operation = "批量删除")
-    public Result<String> batchDeleteCategories(
-            @Parameter(description = "分类ID列表") @RequestBody List<Long> categoryIds) {
-        categoryService.batchDeleteCategories(categoryIds);
-        return Result.success("批量删除成功");
-    }
-
     @PutMapping("/{categoryId}/status")
     @Operation(summary = "切换分类状态", description = "启用或禁用分类")
     @Log(module = "分类管理", operation = "切换状态")

@@ -53,18 +53,11 @@ public interface CategoryManagementService {
      * @return 更新后的分类
      */
     CategoryVO updateCategory(Long categoryId, CategoryDTO updateDTO, Long updaterId);
-
     /**
-     * 删除分类
-     * @param categoryId 分类ID
-     */
-    void deleteCategory(Long categoryId);
-
-    /**
-     * 批量删除分类
+     * 删除一个或多个分类
      * @param categoryIds 分类ID列表
      */
-    void batchDeleteCategories(List<Long> categoryIds);
+    void deleteCategories(List<Long> categoryIds);
 
     /**
      * 切换分类启用/禁用状态

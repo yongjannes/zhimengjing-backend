@@ -197,64 +197,53 @@ public class CategoryManagementServiceImpl implements CategoryManagementService 
     }
 
     /**
-     * 删除分类
+     * 删除一个或多个分类
      */
     @Override
     @Transactional
-    public void deleteCategory(Long categoryId) {
-        // --- 新增逻辑开始 ---
-        // 1. 在删除前，先根据 ID 获取分类实体
-        // 这一步至关重要，因为我们需要知道它的父分类 ID (parentId) 是多少
-        DreamCategory categoryToDelete = categoryMapper.selectById(categoryId);
-
-        // 2. 如果分类不存在（可能已被删除），则直接返回，无需任何操作
-        if (categoryToDelete == null) {
-            return;
-        }
-        // --- 新增逻辑结束 ---
-
-        // 3. 检查是否存在子分类 (沿用原有逻辑)
-        if (categoryMapper.selectCount(new LambdaQueryWrapper<DreamCategory>().eq(DreamCategory::getParentId, categoryId)) > 0) {
-            throw new GeneralBusinessException("该分类下存在子分类，无法删除");
-        }
-
-        // 4. 检查是否有梦境记录正在使用该分类 (沿用原有逻辑)
-        if (recordMapper.selectCount(new LambdaQueryWrapper<DreamRecord>().eq(DreamRecord::getCategoryId, categoryId)) > 0) {
-            throw new GeneralBusinessException("该分类下存在梦境记录，无法删除");
-        }
-
-        // 5. 对主分类表执行逻辑删除
-        categoryMapper.deleteById(categoryId);
-
-        // 6. 对分类属性表执行逻辑删除
-        attributeMapper.delete(new LambdaQueryWrapper<DreamCategoryAttribute>().eq(DreamCategoryAttribute::getCategoryId, categoryId));
-
-        // 7. 对分类关系表执行物理删除
-        relationMapper.delete(new LambdaQueryWrapper<DreamCategoryRelation>().eq(DreamCategoryRelation::getDescendantId, categoryId));
-
-        // --- 新增逻辑开始 ---
-        // 8. 检查是否存在父分类，如果存在，则将其 sub_category_count 减 1
-        if (categoryToDelete.getParentId() != null && categoryToDelete.getParentId() > 0) {
-            categoryMapper.update(
-                    null,
-                    new UpdateWrapper<DreamCategory>()
-                            .eq("id", categoryToDelete.getParentId()) // 定位到父分类
-                            .setSql("sub_category_count = sub_category_count - 1") // 执行 SQL 自减
-                            .gt("sub_category_count", 0) // 安全措施：确保计数不会变为负数
-            );
-        }
-    }
-
-    // ---------------- 已实现的方法 ----------------
-
-    @Override
-    @Transactional
-    public void batchDeleteCategories(List<Long> categoryIds) {
+    public void deleteCategories(List<Long> categoryIds) {
         if (categoryIds == null || categoryIds.isEmpty()) {
             throw new GeneralBusinessException("分类ID列表不能为空");
         }
+
         for (Long categoryId : categoryIds) {
-            deleteCategory(categoryId);
+            // 1. 在删除前，先根据 ID 获取分类实体
+            DreamCategory categoryToDelete = categoryMapper.selectById(categoryId);
+
+            // 2. 如果分类不存在（可能已被删除），则跳过当前循环
+            if (categoryToDelete == null) {
+                continue;
+            }
+
+            // 3. 检查是否存在子分类
+            if (categoryMapper.selectCount(new LambdaQueryWrapper<DreamCategory>().eq(DreamCategory::getParentId, categoryId)) > 0) {
+                throw new GeneralBusinessException("分类 " + categoryToDelete.getName() + " (ID: " + categoryId + ")下存在子分类，无法删除");
+            }
+
+            // 4. 检查是否有梦境记录正在使用该分类
+            if (recordMapper.selectCount(new LambdaQueryWrapper<DreamRecord>().eq(DreamRecord::getCategoryId, categoryId)) > 0) {
+                throw new GeneralBusinessException("分类 " + categoryToDelete.getName() + " (ID: " + categoryId + ")下存在梦境记录，无法删除");
+            }
+
+            // 5. 对主分类表执行逻辑删除
+            categoryMapper.deleteById(categoryId);
+
+            // 6. 对分类属性表执行逻辑删除
+            attributeMapper.delete(new LambdaQueryWrapper<DreamCategoryAttribute>().eq(DreamCategoryAttribute::getCategoryId, categoryId));
+
+            // 7. 对分类关系表执行物理删除
+            relationMapper.delete(new LambdaQueryWrapper<DreamCategoryRelation>().eq(DreamCategoryRelation::getDescendantId, categoryId));
+
+            // 8. 检查是否存在父分类，如果存在，则将其 sub_category_count 减 1
+            if (categoryToDelete.getParentId() != null && categoryToDelete.getParentId() > 0) {
+                categoryMapper.update(
+                        null,
+                        new UpdateWrapper<DreamCategory>()
+                                .eq("id", categoryToDelete.getParentId()) // 定位到父分类
+                                .setSql("sub_category_count = sub_category_count - 1") // 执行 SQL 自减
+                                .gt("sub_category_count", 0) // 安全措施：确保计数不会变为负数
+                );
+            }
         }
     }
 
