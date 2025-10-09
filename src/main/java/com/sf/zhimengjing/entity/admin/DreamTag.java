@@ -1,32 +1,58 @@
-package com.sf.zhimengjing.entity;
+package com.sf.zhimengjing.entity.admin;
 
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+import com.sf.zhimengjing.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
+
 /**
  * @Title: DreamTag
- * @Author: 殤枫
- * @Package: com.sf.zhimengjing.entity
- * @Description: 梦境标签实体类，用于给梦境打标签，便于分类和搜索
+ * @Author: 殇枫
+ * @Package: com.sf.zhimengjing.entity.admin
+ * @description: 梦境标签实体类，对应表 dream_tags，
+ * 用于存储标签的基本信息和使用统计。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("dream_tags")
-public class DreamTag extends BaseEntity {
+public class DreamTag extends BaseEntity implements Serializable {
 
-    /** 标签名称 */
+    /**
+     * 标签名称（唯一）
+     */
+    @TableField("name")
     private String name;
 
-    /** 标签颜色，用于前端显示 */
+    /**
+     * 标签颜色
+     */
+    @TableField("color")
     private String color;
 
-    /** 标签描述，用于说明标签含义 */
+    /**
+     * 标签描述
+     */
+    @TableField("description")
     private String description;
 
-    /** 标签使用次数统计，用于热门标签或排序 */
+    /**
+     * 使用次数（统计字段）
+     */
+    @TableField("usage_count")
     private Integer usageCount;
 
-    /** 是否激活（0-否，1-是），用于控制标签是否可用 */
-    private Integer isActive;
+    /**
+     * 是否启用（true-启用，false-禁用）
+     */
+    @TableField("is_active")
+    private Boolean isActive;
+
+    /**
+     * 删除标志（0-正常，1-删除）
+     */
+    @TableField("delete_flag")
+    @TableLogic
+    private Integer deleteFlag;
 }
