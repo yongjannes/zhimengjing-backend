@@ -1,29 +1,44 @@
-package com.sf.zhimengjing.entity.admin;
+package com.sf.zhimengjing.common.model.vo;
 
-import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.sf.zhimengjing.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 /**
- * @Title: CommunityPost
+ * @Title: CommunityPostListVO
  * @Author: 殇枫
- * @Package: com.sf.zhimengjing.entity.admin
- * @Description: 社区帖子实体类，存储社区帖子的详细信息
+ * @Package: com.sf.zhimengjing.common.model.vo
+ * @Description: 社区帖子列表VO
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-@TableName("community_posts")
-@Schema(description = "社区帖子实体")
-public class CommunityPost extends BaseEntity {
+@Schema(description = "社区帖子列表VO")
+public class CommunityPostListVO {
+
+    /** 帖子ID */
+    @Schema(description = "帖子ID")
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long id;
 
     /** 用户ID */
     @Schema(description = "用户ID")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long userId;
+
+    /** 用户名 */
+    @Schema(description = "用户名")
+    private String userName;
+
+    /** 用户昵称 */
+    @Schema(description = "用户昵称")
+    private String userNickname;
+
+    /** 用户头像 */
+    @Schema(description = "用户头像")
+    private String userAvatar;
 
     /** 帖子标题 */
     @Schema(description = "帖子标题")
@@ -33,8 +48,8 @@ public class CommunityPost extends BaseEntity {
     @Schema(description = "帖子内容")
     private String content;
 
-    /** 纯文本内容（用于搜索） */
-    @Schema(description = "纯文本内容（用于搜索）")
+    /** 纯文本内容 */
+    @Schema(description = "纯文本内容")
     private String contentText;
 
     /** 图片URL列表（JSON格式） */
@@ -48,6 +63,10 @@ public class CommunityPost extends BaseEntity {
     /** 分类ID */
     @Schema(description = "分类ID")
     private Integer categoryId;
+
+    /** 分类名称 */
+    @Schema(description = "分类名称")
+    private String categoryName;
 
     /** 查看次数 */
     @Schema(description = "查看次数")
@@ -85,6 +104,10 @@ public class CommunityPost extends BaseEntity {
     @Schema(description = "状态:0-待审核,1-已通过,2-已拒绝,3-已删除")
     private Integer status;
 
+    /** 状态文本 */
+    @Schema(description = "状态文本")
+    private String statusText;
+
     /** 拒绝原因 */
     @Schema(description = "拒绝原因")
     private String rejectReason;
@@ -95,14 +118,21 @@ public class CommunityPost extends BaseEntity {
 
     /** 发布时间 */
     @Schema(description = "发布时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime publishedAt;
 
     /** 最后评论时间 */
     @Schema(description = "最后评论时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime lastCommentedAt;
 
-    /** 逻辑删除标识 (0: 未删除, 1: 已删除) */
-    @TableLogic
-    @Schema(description = "逻辑删除标识 (0: 未删除, 1: 已删除)")
-    private Integer deleted;
+    /** 创建时间 */
+    @Schema(description = "创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime createTime;
+
+    /** 更新时间 */
+    @Schema(description = "更新时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime updateTime;
 }
